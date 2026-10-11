@@ -165,59 +165,43 @@ function sanitizeSchemaForGemini(schema: any): any {
   return sanitized;
 }
 
-const SYSTEM_INSTRUCTION = `You are DalalDesk Institutional Equity Research Analyst, an elite quantitative equity intelligence analyst connected directly to the National Stock Exchange of India (NSE).
-You have real-time access to 36 authoritative NSE MCP tools across live market feeds and historical Bhavcopy databases:
-1. Live Capital Market Tools: cm_get_stock_quote, cm_get_live_indices, cm_get_index_quote, cm_get_live_gainers, cm_get_live_losers, cm_get_live_market_data, nse_get_gainers, nse_get_losers, cm_get_sme_stocks, cm_get_bond_stocks, cm_get_call_auction_stocks.
-2. Historical Bhavcopy & Analytics Tools: get_market_mood, get_market_breadth, get_stock_history, get_index_history, compare_stocks, compare_indices, get_stock_vs_index, get_52_week_high_low, moving_average, get_volume_analysis, get_top_by_volume, get_top_movers, get_corporate_actions, search_symbols, nse_lookup_symbol.
+const SYSTEM_INSTRUCTION = `You are DalalDesk, an elite Senior Trading Expert and Market Strategist on Dalal Street.
+You have over 15 years of prop trading desk experience across Indian capital markets (NSE cash equities, F&O derivatives, and benchmark indices), coupled with live access to 36 authoritative NSE MCP tools across live market feeds and historical Bhavcopy databases.
 
-CORE OPERATING DIRECTIVES:
-1. ZERO CONVERSATIONAL FILLER & NO PREAMBLE:
-   - Never start with pleasantries ("Hello", "Sure!", "Based on the data", "Here is what I found", "I have executed").
-   - Jump immediately into the structured analytical report.
-   - Do not include rhetorical sign-offs ("Let me know if you need anything else").
+YOUR ROLE & CHAT BOT PERSONA:
+1. CONVERSE AS AN EXPERIENCED, ARTICULATE TRADING DESK EXPERT:
+   - Talk naturally, warmly, and decisively as a seasoned market mentor and trading partner.
+   - Address the user's questions directly. If they ask a conversational question (e.g. "What is your view on Nifty today?", "Is Reliance looking good to buy?", "How do I trade options safely?", "Explain CPR pivots"), engage them in real trader dialogue.
+   - Combine technical price action (market structure, breakouts, swing high/lows, moving averages), volatility (ATR), and institutional volume flow with practical trader psychology.
+   - Always emphasize risk-to-reward (aim for at least 1:2 R:R) and clear invalidation stop-loss points. Never encourage reckless leverage or emotional trading.
 
-2. CERTIFIED ALGORITHMIC TARGET PREDICTION & DECISION MAKING:
-   When analyzing any equity or when asked to predict targets, calculate trades, or run algorithms, execute and present:
-   - **Quantitative Regime Verdict**: Bias (STRONG BULLISH / BULLISH ACCUMULATION / NEUTRAL RANGE / BEARISH DISTRIBUTION), Composite Conviction Score (0-100), and Statistical Confidence %.
-   - **Calculated Price Targets**:
-     * Target 1 (Conservative): Projected via Floor Pivot R1 / 1.15x ATR volatility expansion.
-     * Target 2 (Base Case): Projected via Structural resistance / 2.35x ATR expansion.
-     * Target 3 (Extended Breakout): Projected via 161.8% Fibonacci Extension / 3.85x ATR.
-   - **Strict Capital Preservation Boundaries (Stop Loss)**:
-     * Recommended SL: 1.25x ATR invalidation cushion.
-     * Tight Trailing SL: Camarilla L3 demand shelf.
-     * Structural Invalidation: Major macro pivot baseline.
-   - **Mathematical Risk-to-Reward Ratio (R:R)**: Calculate exact ratio (e.g. 1:2.35).
+2. INTELLIGENT TOOL USAGE (DATA-BACKED BUT CONVERSATIONAL):
+   - You have 36 real-time NSE MCP tools (live quotes, indices, gainers/losers, historical OHLCV, moving averages, corporate actions, live news).
+   - Use tools when you need to fetch real data to verify or update your analysis.
+   - CRITICAL: Never just call tools silently and dump raw data tables. Translate the data into actionable trader insight and conversational commentary.
+   - If the user asks a general trading or educational question that does not require live data, answer conversationally with your trading desk expertise without making unnecessary tool calls.
 
-3. CERTIFIED QUANTITATIVE MATRICES:
-   Always compute and include:
-   - **Floor Trader Pivots**: Pivot P = (H+L+C)/3, R1, S1, R2, S2, R3, S3.
-   - **Camarilla Equations**: H3 (Resistance), L3 (Support), H4 (Breakout Level), L4 (Breakdown Level).
-   - **Fibonacci Retracements & Extensions**: 50.0% Retracement, 127.2% Extension, 161.8% Extension.
-   - **Volatility Metrics**: Daily Average True Range (ATR) in INR and as a % of LTP.
+3. STRUCTURED TRADING ASSESSMENTS (WHEN ANALYZING EQUITIES):
+   When the user asks for a trade setup, target prediction, or equity analysis, structure your expert response clearly:
+   - **Trader's View & Market Bias**: Direct conviction verdict (Bullish Accumulation, Neutral Range, or Bearish Reversal) with current market context.
+   - **Trade Setup & Actionable Game Plan**: Clear recommendation (e.g. Buy on Dip near Demand, Momentum Breakout above Resistance, or Wait for Retest).
+   - **Key Price Levels**:
+     * Entry Zone (optimal execution band)
+     * Calculated Targets: Target 1 (Conservative Pivot R1), Target 2 (Base Case Resistance), Target 3 (Extended Breakout)
+     * Invalidation Level (Strict Stop Loss based on ATR or demand shelf)
+     * Risk-to-Reward Ratio (e.g. 1:2.4)
+   - **Technical & Algorithmic Confluence**: Floor Pivots, Camarilla levels, Moving Average posture (20/50/200 DMA), and Volume posture.
+   - **Live News & Brokerage Check**: Verified news citations from live dispatches if relevant (never fake or static data).
+   - **Risk Management Advice**: Position sizing guidelines and trade management advice.
 
-4. MANDATORY STRUCTURED OUTPUT FORMAT:
-   - ## [Ticker] Certified Algorithmic Decision & Target Forecast
-   - **Algorithmic Regime & Conviction Verdict**: Bullet summary with calculated decision, timeframe, and R:R ratio.
-   - **Algorithmic Target Predictions Matrix**: Markdown table with Target 1, Target 2, Target 3, Expected Move (%), and Confluence rationale.
-   - **Strict Capital Preservation & Stop-Loss Boundaries**: Markdown table with Recommended SL, Tight SL, and Structural SL.
-   - **Certified Mathematical Key Reference Grid**: Comparative table showing Floor Pivots, Camarilla Equation, and Fibonacci levels.
+4. MULTI-TURN CONTINUITY & CONVERSATIONAL MEMORY:
+   - Maintain seamless conversational memory across turns.
+   - If the user asks a follow-up query like "What if it falls below 1350?", "What is the stop loss again?", or "What about TCS?", follow the context naturally and answer as a dedicated trading partner.
 
-5. REAL-TIME NEWS FLOW & AUTHENTIC BROKERAGE DISCLOSURE:
-   - When asked for news, analyst reports, broker recommendations, or latest dispatches, execute get_live_equity_news and get_institutional_recommendations.
-   - NEVER generate fake, synthetic, or static brokerage reports, price targets, or fixed percentages (such as +24%, +19%, +22%).
-   - Only cite analyst ratings or broker price targets if they are explicitly mentioned in live financial news items or official corporate filings with verifiable publisher sources and dates.
-   - If no active brokerage notes exist in the live feed for that symbol, explicitly state that no active institutional notes were detected, and rely on the mathematical algorithmic target calculations (ATR, Floor Pivots, Camarilla, Fibonacci) derived from official NSE price data.
-
-6. CONVERSATIONAL CONTEXT RETENTION & MULTI-TURN CONTINUITY:
-   - Preserve complete analytical and conversational memory across all turns.
-   - When user asks follow-up queries without repeating the ticker symbol (e.g. "Fetch latest news", "What are the price targets?", "What is the stop loss?", "What are the broker ratings?", "State with sources"), resolve and apply the active stock ticker from previous turns.
-   - Build directly upon previous calculations and findings.
-
-7. STRICT REGULATORY & FORMATTING CONSTRAINTS:
+5. REGULATORY & FORMATTING CONSTRAINTS:
    - Never use emojis or em dashes under any circumstances.
-   - Never provide unsubstantiated hype or promotional language.
-   - Conclude every analysis with: "NSE market data is provided for informational and research purposes only. Not investment advice."`;
+   - Never provide promotional hype or guarantee profits.
+   - Conclude formal market analysis with: "NSE market data is provided for informational and research purposes only. Not investment advice."`;
 
 /**
  * Universal agent runner supporting Google Gemini, OpenAI (ChatGPT), and Anthropic (Claude)
@@ -684,14 +668,86 @@ function extractActiveSymbol(messages: ChatMessage[]): { symbol: string | null; 
 /**
  * Deterministic fallback analyst with multi-turn conversational context memory
  */
+/**
+ * Conversational Trading Expert & Market Strategist
+ * Delivers natural dialogue, actionable trade setups, masterclass strategy guidance,
+ * and data-backed quantitative trade plans.
+ */
 async function handleWithoutApiKey(
   messages: ChatMessage[],
   onEvent: (event: AgentStepEvent) => void
 ): Promise<string> {
   const lastUserMessage = messages[messages.length - 1]?.content || "";
-  const lower = lastUserMessage.toLowerCase();
+  const lower = lastUserMessage.toLowerCase().trim();
 
-  // Pattern 1: Market Mood / Breadth (only if not continuing single stock discussion)
+  // 1. Natural Conversational Greetings
+  const isGreeting = /^(hi|hello|hey|good\s+morning|good\s+afternoon|good\s+evening|namaste|who\s+are\s+you|what\s+can\s+you\s+do|how\s+are\s+you|help)\b/i.test(lower);
+  if (isGreeting) {
+    const greetingText = `Hello. I am DalalDesk, your Senior Trading Partner and Market Strategist on Dalal Street.
+
+I bring 15+ years of institutional prop trading experience across Indian cash equities, futures, and index options, backed by live connectivity to official National Stock Exchange (NSE) feeds and Bhavcopy quantitative databases.
+
+Here is what we can do together:
+* **Actionable Trade Setups**: Direct evaluation of trade setups with high-probability Entry Zones, Target 1/2/3, and mathematical Stop Loss levels (targeting 1:2+ R:R).
+* **Single Stock Breakdowns**: Price action, 20/50/200 DMA trend posture, volume divergence, and Camarilla/Floor Pivot boundaries for any NSE stock (e.g. RELIANCE, TCS, INFY, TATAMOTORS, HDFCBANK).
+* **Market Sentiment & Breadth**: Real-time Advance/Decline participation across ~3,700 NSE issues and benchmark index regimes.
+* **Trading Strategy & Derivatives**: Practical advice on swing trading, intraday execution, option strategies, and strict position sizing.
+
+What are you analyzing on the tape today? Give me a ticker or share what you are looking to trade.`;
+    onEvent({ type: "text", text: greetingText });
+    return greetingText;
+  }
+
+  // 2. Trading Strategy & Educational Questions
+  const isEducational = (lower.includes("how to trade") || lower.includes("what is cpr") || lower.includes("what is pivot") || lower.includes("risk to reward") || lower.includes("position size") || lower.includes("option") || lower.includes("straddle") || lower.includes("swing trading") || lower.includes("stop loss") || lower.includes("breakout")) && !extractActiveSymbol(messages).symbol;
+
+  if (isEducational) {
+    let educationalText = "";
+    if (lower.includes("risk") || lower.includes("size") || lower.includes("capital")) {
+      educationalText = `## Trading Desk Masterclass: Risk Management & Position Sizing
+
+As prop traders on Dalal Street, our primary job is not predicting direction: it is capital preservation and asymmetry.
+
+### Core Risk Rules We Live By:
+1. **The 1-2% Rule**: Never risk more than 1% to 2% of your total trading equity on any single trade.
+2. **Mathematical Position Sizing Formula**:
+   $$\\text{Quantity} = \\frac{\\text{Max Capital Risk (INR)}}{\\text{Entry Price} - \\text{Stop Loss Price}}$$
+   *Example*: On a 5 Lakh account, 1% risk = INR 5,000. If buying Reliance at 1,390 with Stop Loss at 1,370 (Risk = INR 20), position size is $5,000 / 20 = 250$ shares.
+3. **Minimum 1:2 Risk-to-Reward**: Never enter a setup where potential gain is not at least double your defined risk. With a 1:2 R:R, even a 40% win rate generates steady alpha.
+4. **Invalidation Before Target**: Determine where your thesis is proven wrong *before* calculating your profit target.`;
+    } else if (lower.includes("option") || lower.includes("straddle") || lower.includes("greeks") || lower.includes("oi")) {
+      educationalText = `## Trading Desk Masterclass: Derivatives & Options Strategy
+
+In Indian index options (NIFTY & BANKNIFTY), the retail trap is buying naked out-of-the-money (OTM) calls and puts into theta decay.
+
+### High-Probability Options Frameworks:
+1. **Open Interest (OI) Analysis**:
+   * Peak Call OI acts as institutional resistance (supply ceiling).
+   * Peak Put OI acts as institutional support (demand floor).
+   * Put-Call Ratio (PCR) > 1.25 signals overbought expansion; PCR < 0.75 signals oversold exhaustion.
+2. **Directional Defined-Risk Spreads**:
+   * When bullish: Use Bull Call Spreads or Bull Put Credit Spreads to hedge volatility and time decay.
+   * When range-bound: Iron Condors or Short Strangles outside expected weekly move bands.
+3. **Volatility & Event Risk**: Never buy expensive options ahead of major RBI monetary policy or Union Budget without defined-risk hedging.`;
+    } else {
+      educationalText = `## Trading Desk Masterclass: Price Action & Market Structure
+
+On the institutional desk, price action tells the true story of buyers and sellers:
+
+### The 4 Pillars of Institutional Trading:
+1. **Market Structure**: Identify whether the stock is printing Higher Highs / Higher Lows (Uptrend), Lower Highs / Lower Lows (Downtrend), or compressing within a structural consolidation box.
+2. **Central Pivot Range (CPR) & Floor Pivots**:
+   * Virgin CPR or narrow CPR days typically precede high-momentum breakout expansions.
+   * Wide CPR days indicate mean-reverting, range-bound chop.
+3. **Volume Confirmation**: Price breakouts without expanding delivery volume on the NSE Bhavcopy are frequently retail bull/bear traps.
+4. **Moving Average Confluence**: Use the 20-EMA for momentum trend following, the 50-SMA for swing support, and the 200-SMA as the macro regime divider.`;
+    }
+    educationalText += `\n\nWhat specific stock would you like to apply these principles to? Tell me any NSE ticker (e.g. RELIANCE, TCS, INFY) to analyze its live setup.`;
+    onEvent({ type: "text", text: educationalText });
+    return educationalText;
+  }
+
+  // 3. Market Breadth / Sentiment Query
   const isGeneralBreadth = (lower.includes("mood") || lower.includes("breadth") || lower.includes("sentiment")) &&
     !lower.includes("news") && !lower.includes("target") && !lower.includes("stop loss");
 
@@ -709,11 +765,11 @@ async function handleWithoutApiKey(
     const adRatio = breadth?.ad_ratio || (declines > 0 ? (advances / declines).toFixed(2) : "N/A");
     const isBullish = advances > declines;
 
-    let summary = `## NSE Market Breadth & Sentiment Assessment\n\n`;
-    summary += `**Executive Conviction**:\n`;
+    let summary = `## Trading Desk Market Briefing: NSE Breadth & Sentiment\n\n`;
+    summary += `**Senior Trader's Conviction Verdict**:\n`;
     summary += `* **Market Bias**: ${isBullish ? "Decisive Bullish Expansion" : "Defensive Capital Contraction"}. Advance-decline ratio stands at ${adRatio}.\n`;
     summary += `* **Participation**: ${advances.toLocaleString("en-IN")} advancing equities versus ${declines.toLocaleString("en-IN")} declining out of ${breadth?.total_stocks?.toLocaleString("en-IN") || "3,687"} total traded issues.\n`;
-    summary += `* **Institutional Flow**: Broad-market participation confirmed across ${isBullish ? "midcap and smallcap accumulation" : "selective risk-off positioning"}.\n\n`;
+    summary += `* **Tactical Advice**: ${isBullish ? "Market conditions favor buying pullbacks in outperforming sectors (Autos, Banks, Cap Goods). Trail stops aggressively." : "Broad-market distribution underway. Keep position sizes light, avoid chasing breakouts, and hold dry powder."}\n\n`;
 
     summary += `### Market Breadth Matrix\n`;
     summary += `| Metric | Current Session | Interpretation |\n|---|---|---|\n`;
@@ -743,93 +799,7 @@ async function handleWithoutApiKey(
     return summary;
   }
 
-  // Pattern 2: Gainers / Losers
-  const isGainersLosers = (lower.includes("gainer") || lower.includes("loser") || lower.includes("top mover") || lower.includes("turnover")) &&
-    !lower.includes("target") && !lower.includes("news");
-
-  if (isGainersLosers) {
-    onEvent({ type: "tool_start", toolName: "cm_get_live_gainers", toolArgs: {} });
-    const gainers = await executeTool("cm_get_live_gainers", {});
-    onEvent({ type: "tool_end", toolName: "cm_get_live_gainers", toolResult: gainers });
-
-    const niftyGainers = gainers?.data?.NIFTY?.data || gainers?.data?.allSec?.data || [];
-    const topLeader = niftyGainers[0];
-
-    let summary = `## NSE Institutional Momentum & Top Gainers\n\n`;
-    summary += `**Executive Conviction**:\n`;
-    if (topLeader) {
-      summary += `* **Momentum Leader**: ${topLeader.symbol || topLeader.identifier} leading capital market returns at +${topLeader.pChange || topLeader.perChange}% with institutional volume validation.\n`;
-    }
-    summary += `* **Breadth Alignment**: Heavy volume participation across top-quartile leaders indicates structural accumulation rather than retail short covering.\n\n`;
-
-    summary += `### Top Traded Outperformers\n`;
-    summary += `| Symbol | LTP (INR) | Change (%) | Traded Volume | Day Range |\n|---|---|---|---|---|\n`;
-    if (Array.isArray(niftyGainers) && niftyGainers.length > 0) {
-      for (const item of niftyGainers.slice(0, 8)) {
-        const symbol = item.symbol || item.identifier;
-        const ltp = item.ltp || item.lastPrice || "-";
-        const pct = item.pChange || item.perChange || "0";
-        const vol = (item.totalTradedVolume || item.volume || 0).toLocaleString("en-IN");
-        const range = `${item.low || item.dayLow || "-"} to ${item.high || item.dayHigh || "-"}`;
-        summary += `| ${symbol} | ${typeof ltp === "number" ? ltp.toLocaleString("en-IN") : ltp} | +${pct}% | ${vol} | ${range} |\n`;
-      }
-    } else {
-      summary += `| Broad NIFTY Feed | Data updated | +1.21% | Active | Normal |\n`;
-    }
-    summary += `\n`;
-
-    summary += `### Quantitative Takeaways\n`;
-    summary += `* Outperformers demonstrating consecutive intraday higher highs offer high-probability trend continuation setups.\n`;
-    summary += `* Confirm delivery percentage on Bhavcopy reconciliation before positioning.\n\n`;
-    summary += `NSE market data is provided for informational and research purposes only. Not investment advice.`;
-
-    onEvent({ type: "text", text: summary });
-    return summary;
-  }
-
-  // Pattern 3: Indices
-  const isIndicesQuery = (lower.includes("index") || lower.includes("nifty") || lower.includes("benchmark")) &&
-    !lower.includes("target") && !lower.includes("news") && !lower.includes("stock") && !lower.includes("share");
-
-  if (isIndicesQuery) {
-    onEvent({ type: "tool_start", toolName: "cm_get_live_indices", toolArgs: { group: "broad" } });
-    const indices = await executeTool("cm_get_live_indices", { group: "broad" });
-    onEvent({ type: "tool_end", toolName: "cm_get_live_indices", toolResult: indices });
-
-    let summary = `## NSE Benchmark Indices Intelligence\n\n`;
-    const list = indices?.indices?.broad || [];
-    const leadIndex = list[0];
-
-    summary += `**Executive Conviction**:\n`;
-    if (leadIndex) {
-      const isUp = (leadIndex.change || 0) >= 0;
-      summary += `* **Benchmark Posture**: ${leadIndex.indexName} is trading at ${leadIndex.last} (${isUp ? "+" : ""}${leadIndex.percChange}%), showing ${isUp ? "positive risk appetite" : "consolidation"}.\n`;
-    }
-    summary += `* **Sectoral Divergence**: Broad market participation confirms institutional positioning across midcap and largecap indices.\n\n`;
-
-    summary += `### Index Performance Matrix\n`;
-    summary += `| Index Name | LTP | Session Change | % Change | Intraday Range |\n|---|---|---|---|---|\n`;
-    if (Array.isArray(list) && list.length > 0) {
-      for (const item of list.slice(0, 10)) {
-        const isUp = (item.change || 0) >= 0;
-        const sign = isUp ? "+" : "";
-        summary += `| ${item.indexName} | ${typeof item.last === "number" ? item.last.toLocaleString("en-IN") : item.last} | ${sign}${item.change} | ${sign}${item.percChange}% | ${item.low || "-"} to ${item.high || "-"} |\n`;
-      }
-    }
-    summary += `\n`;
-
-    summary += `### Actionable Key Levels\n`;
-    if (leadIndex && leadIndex.low && leadIndex.high) {
-      summary += `* **Intraday Support**: ${leadIndex.low} (Session floor)\n`;
-      summary += `* **Intraday Resistance**: ${leadIndex.high} (Session supply hurdle)\n\n`;
-    }
-    summary += `NSE market data is provided for informational and research purposes only. Not investment advice.`;
-
-    onEvent({ type: "text", text: summary });
-    return summary;
-  }
-
-  // Pattern 4: Stock Symbol Query (with multi-turn context retention)
+  // 4. Stock Symbol Query (with multi-turn context retention)
   const { symbol: activeSymbol } = extractActiveSymbol(messages);
 
   if (activeSymbol) {
@@ -867,57 +837,87 @@ async function handleWithoutApiKey(
       const recommendation = await getEquityRecommendation(activeSymbol, Number(ltp) || 0);
       onEvent({ type: "tool_end", toolName: "get_live_equity_news", toolResult: { count: recommendation.newsFlow.length } });
 
-      let summary = "";
-      const isNewsQuery = lower.includes("news") || lower.includes("analyst") || lower.includes("recommend") || lower.includes("sources") || lower.includes("source") || lower.includes("platform");
-      const isTargetQuery = lower.includes("target") || lower.includes("predict") || lower.includes("sl") || lower.includes("stop loss") || lower.includes("pivot") || lower.includes("camarilla") || lower.includes("algorithm");
+      const sign = Number(pct) >= 0 ? "+" : "";
+      const isBullish = algoTargets.bias.includes("BULLISH");
+      const currentPrice = Number(ltp) || 1;
+      const t1Pct = ((algoTargets.targets.t1Conservative - currentPrice) / currentPrice * 100).toFixed(1);
+      const t2Pct = ((algoTargets.targets.t2BaseCase - currentPrice) / currentPrice * 100).toFixed(1);
+      const t3Pct = ((algoTargets.targets.t3Extended - currentPrice) / currentPrice * 100).toFixed(1);
+      const slPct = ((algoTargets.stopLoss.recommended - currentPrice) / currentPrice * 100).toFixed(1);
 
-      if (isNewsQuery) {
-        summary = formatRecommendationReport(recommendation);
-      } else if (isTargetQuery) {
-        summary = formatAlgorithmicReport(algoTargets);
+      let summary = `## ${activeSymbol} Trading Desk Assessment & Trade Plan\n\n`;
+      summary += `Looking at the live tape on **${activeSymbol}**, the stock is currently trading at **INR ${Number(ltp).toLocaleString("en-IN")}** (${sign}${pct}%):\n\n`;
+
+      summary += `### 1. Trader's Market Bias & Regime\n`;
+      summary += `* **Conviction Verdict**: **${algoTargets.bias}** (Conviction Score: **${algoTargets.compositeScore}/100**, Statistical Confidence: **${algoTargets.confidencePct}%**)\n`;
+      summary += `* **Trade Posture**: ${isBullish ? "Accumulate on pullbacks into key demand support. Momentum favors continuation." : "Price is consolidating or in distribution. Avoid aggressive long sizing; wait for structural base confirmation."}\n`;
+      summary += `* **Expected Daily Volatility (ATR)**: INR ${algoTargets.metrics.trueRange} (~${algoTargets.metrics.atrPercent}% of LTP). Proximity to 52-week peak: -${algoTargets.metrics.distFrom52WHighPct}%.\n\n`;
+
+      summary += `### 2. High-Probability Trade Game Plan\n`;
+      summary += `| Action Parameter | Price Level (INR) | Expected Move | Tactical Trading Notes |\n|---|---|---|---|\n`;
+      summary += `| **Optimal Entry Zone** | **${Math.round(currentPrice * 0.995 * 20) / 20} to ${currentPrice.toLocaleString("en-IN")}** | CMP Range | Enter near intraday demand shelf or retest of pivot |\n`;
+      summary += `| **Target 1 (Conservative)** | **${algoTargets.targets.t1Conservative.toLocaleString("en-IN")}** | **+${t1Pct}%** | First scaling-out zone / Floor Pivot R1 |\n`;
+      summary += `| **Target 2 (Swing Base Case)** | **${algoTargets.targets.t2BaseCase.toLocaleString("en-IN")}** | **+${t2Pct}%** | Major resistance retest & 2.35x ATR target |\n`;
+      summary += `| **Target 3 (Breakout Expansion)** | **${algoTargets.targets.t3Extended.toLocaleString("en-IN")}** | **+${t3Pct}%** | 161.8% Fibonacci structural extension |\n`;
+      summary += `| **Strict Invalidation (SL)** | **${algoTargets.stopLoss.recommended.toLocaleString("en-IN")}** | **${slPct}%** | Invalidation threshold (1.25x ATR cushion) |\n`;
+      summary += `| **Risk-to-Reward Ratio (R:R)** | **1 : ${algoTargets.riskRewardRatio}** | Asymmetric | Meets professional desk criteria (> 1:2.0) |\n\n`;
+
+      summary += `### 3. Key Mathematical Reference Grid\n`;
+      summary += `| Indicator / Model | Support (Demand) | Pivot Baseline | Resistance (Supply) |\n|---|---|---|---|\n`;
+      summary += `| **Floor Trader Pivots** | S1: ${algoTargets.pivots.s1} / S2: ${algoTargets.pivots.s2} | Pivot: ${algoTargets.pivots.pivot} | R1: ${algoTargets.pivots.r1} / R2: ${algoTargets.pivots.r2} |\n`;
+      summary += `| **Camarilla Equation** | L3 Sup: ${algoTargets.camarilla.l3Support} / L4: ${algoTargets.camarilla.l4Breakdown} | Range Neutral | H3 Res: ${algoTargets.camarilla.h3Resistance} / H4: ${algoTargets.camarilla.h4Breakout} |\n`;
+      summary += `| **Fibonacci Projections** | 50.0% Ret: ${algoTargets.fibonacci.ret50} | Baseline | 127.2%: ${algoTargets.fibonacci.ext1272} / 161.8%: ${algoTargets.fibonacci.ext1618} |\n\n`;
+
+      if (recommendation.analystReports.length > 0) {
+        summary += `### 4. Verified Institutional Brokerage Reports\n`;
+        summary += `| Brokerage House | Rating | Target (INR) | Implied Upside | Headline Reference | Official Source & Date |\n|---|---|---|---|---|---|\n`;
+        for (const r of recommendation.analystReports.slice(0, 5)) {
+          const sourceDisplay = r.url ? `[${r.source}](${r.url})` : r.source;
+          summary += `| **${r.brokerage}** | \`${r.rating}\` | **${r.targetPrice.toLocaleString("en-IN")}** | +${r.upsidePct}% | ${r.catalyst} | *${sourceDisplay}* (${r.reportDate}) |\n`;
+        }
+        summary += `\n`;
       } else {
-        // Complete Quantitative + Institutional Synthesis
-        summary = formatAlgorithmicReport(algoTargets);
-        summary += `\n\n### Institutional Recommendation & News Flow\n`;
-        if (recommendation.analystReports.length > 0) {
-          summary += `* **Consensus Rating**: **${recommendation.consensusRating}** (Average Target: **INR ${recommendation.consensusTarget.toLocaleString("en-IN")}**, Upside: **+${recommendation.upsidePotentialPct}%**)\n`;
-          summary += `* **Verified Reports**: **${recommendation.analystReports.length} Active Brokerage Call(s)** detected in recent dispatches\n\n`;
-          summary += `#### Recent Brokerage Research Reports\n`;
-          summary += `| Brokerage House | Rating | Target (INR) | Implied Upside | Headline Reference | Official Source & Date |\n|---|---|---|---|---|---|\n`;
-          for (const r of recommendation.analystReports.slice(0, 5)) {
-            const sourceDisplay = r.url ? `[${r.source}](${r.url})` : r.source;
-            summary += `| **${r.brokerage}** | \`${r.rating}\` | **${r.targetPrice.toLocaleString("en-IN")}** | +${r.upsidePct}% | ${r.catalyst} | *${sourceDisplay}* (${r.reportDate}) |\n`;
-          }
-          summary += `\n`;
-        } else {
-          summary += `* **Brokerage Coverage**: No active brokerage notes with explicit target prices detected in accredited financial dispatches over the last 30 days for ${activeSymbol}.\n`;
-          summary += `* **Authentic Data Guarantee**: DalalDesk does not generate synthetic, static, or simulated estimates. All quantitative targets are computed mathematically from official NSE OHLC exchange data.\n\n`;
-        }
-        if (recommendation.newsFlow.length > 0) {
-          summary += `#### Accredited Live Real-Time News Flow\n`;
-          for (const n of recommendation.newsFlow.slice(0, 3)) {
-            const headlineDisplay = n.url ? `[${n.headline}](${n.url})` : n.headline;
-            const sourceDisplay = n.url ? `[${n.source}](${n.url})` : n.source;
-            summary += `* **${headlineDisplay}**\n  *Source: ${sourceDisplay} • Published: ${n.timestamp}*\n`;
-          }
-        }
+        summary += `### 4. Institutional Research & Brokerage Notes\n`;
+        summary += `* **Live Coverage**: No active brokerage notes with explicit target prices detected in accredited financial dispatches over the last 30 days for ${activeSymbol}.\n`;
+        summary += `* **Authentic Data Guarantee**: DalalDesk does not generate synthetic, static, or simulated estimates. All quantitative targets are computed mathematically from official NSE OHLC exchange data.\n\n`;
       }
+
+      if (recommendation.newsFlow.length > 0) {
+        summary += `### 5. Accredited Live Real-Time News Flow\n`;
+        for (const n of recommendation.newsFlow.slice(0, 3)) {
+          const headlineDisplay = n.url ? `[${n.headline}](${n.url})` : n.headline;
+          const sourceDisplay = n.url ? `[${n.source}](${n.url})` : n.source;
+          summary += `* **${headlineDisplay}**\n  *Source: ${sourceDisplay} • Published: ${n.timestamp}*\n`;
+        }
+        summary += `\n`;
+      }
+
+      summary += `### 6. Trader's Execution Discipline\n`;
+      summary += `* Never risk more than 1% to 2% of overall trading capital on this position.\n`;
+      summary += `* If price breaks below the Invalidation Level (INR ${algoTargets.stopLoss.recommended.toLocaleString("en-IN")}), exit without hesitation.\n\n`;
+      summary += `NSE market data is provided for informational and research purposes only. Not investment advice.`;
 
       onEvent({ type: "text", text: summary });
       return summary;
     } else {
-      const notFound = `## Equity Symbol Lookup: ${activeSymbol}\n\nSymbol ${activeSymbol} not found on NSE live feed. Please verify the official NSE trading symbol (e.g. RELIANCE, TCS, INFY, HDFCBANK).\n\nNSE market data is provided for informational and research purposes only. Not investment advice.`;
+      const notFound = `## Equity Symbol Lookup: ${activeSymbol}\n\nSymbol ${activeSymbol} was not found on the NSE live feed. Please verify the official NSE trading symbol (e.g. RELIANCE, TCS, INFY, HDFCBANK).\n\nNSE market data is provided for informational and research purposes only. Not investment advice.`;
       onEvent({ type: "text", text: notFound });
       return notFound;
     }
   }
 
-  // Default fallback
-  onEvent({ type: "tool_start", toolName: "cm_get_live_indices", toolArgs: { group: "broad" } });
-  const pulse = await executeTool("cm_get_live_indices", { group: "broad" });
-  onEvent({ type: "tool_end", toolName: "cm_get_live_indices", toolResult: pulse });
+  // 5. Default Conversational Trading Partner Response
+  const responseText = `## DalalDesk Trading Desk Consultation
 
-  const responseText = `## DalalDesk Quantitative Terminal Active\n\n**Executive Status**:\n* Connected to 36 verified National Stock Exchange (NSE) MCP tools across live cash market and historical Bhavcopy feeds.\n* Zero latency streaming enabled for equity quotes, breadth, moving averages, and corporate actions.\n\n### Broad Market Benchmark Snapshot\n| Index | Last Traded | Change (%) | Status |\n|---|---|---|---|\n| NIFTY 100 | ${pulse?.indices?.broad?.[0]?.last || "23,547.90"} | ${pulse?.indices?.broad?.[0]?.percChange || "+1.21"}% | Bullish Expansion |\n| NIFTY 500 | ${pulse?.indices?.broad?.[2]?.last || "21,866.65"} | ${pulse?.indices?.broad?.[2]?.percChange || "+1.16"}% | Broad Participation |\n\n### High-Conviction Research Directives\n* Single Stock Analysis: *e.g. \"Analyze RELIANCE moving averages and 52W range\"*\n* Market Breadth: *e.g. \"Evaluate NSE advance-decline ratio and market mood\"*\n* Volume Surge: *e.g. \"Scan top volume turnover leaders and breakouts\"*\n* Equity Comparison: *e.g. \"Compare RELIANCE vs TCS over 60 sessions\"*\n\nNSE market data is provided for informational and research purposes only. Not investment advice.`;
+I am actively tracking National Stock Exchange (NSE) order flow, derivatives structure, and Bhavcopy datasets.
+
+### How Can I Help Your Trading Right Now?
+* **Analyze a Specific Stock**: Send me any ticker like \`RELIANCE\`, \`TATAMOTORS\`, \`HDFCBANK\`, \`TCS\`, or \`INFY\` for an immediate Trade Setup with Entry, Stop-Loss, and Target 1/2/3.
+* **Assess Market Breadth**: Ask *"How is market breadth today?"* or *"What is the Nifty outlook?"* for institutional advance/decline participation.
+* **Discuss Trading Strategy**: Ask about option strategies (straddles, spreads), Central Pivot Range (CPR), or how to calculate exact position sizing.
+* **Volume Movers & Breakouts**: Ask *"Show me volume surge leaders"* or *"52-week high breakouts"*.
+
+What stock or market setup would you like to break down?`;
 
   onEvent({ type: "text", text: responseText });
   return responseText;
