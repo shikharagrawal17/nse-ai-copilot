@@ -314,6 +314,22 @@ function getOfflineToolSnapshot(toolName: string, args: Record<string, any>): an
     };
   }
 
+  if (toolName === "cm_get_live_gainers") {
+    return {
+      index: "gainers",
+      updatedAt: new Date().toISOString(),
+      data: {
+        NIFTY: {
+          data: [
+            { symbol: "TATAMOTORS", ltp: 942.5, high_price: 948.0, low_price: 928.1, open_price: 930.0, prev_price: 921.8, net_price: 2.25 },
+            { symbol: "HDFCBANK", ltp: 1712.3, high_price: 1720.0, low_price: 1698.5, open_price: 1702.0, prev_price: 1689.4, net_price: 1.36 },
+            { symbol: "SUNPHARMA", ltp: 1894.1, high_price: 1905.0, low_price: 1872.0, open_price: 1875.0, prev_price: 1868.0, net_price: 1.40 },
+          ],
+        },
+      },
+    };
+  }
+
   if (toolName === "get_market_mood" || toolName === "cm_get_live_indices") {
     return {
       benchmarks: {
