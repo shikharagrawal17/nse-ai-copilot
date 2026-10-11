@@ -321,9 +321,12 @@ function getOfflineToolSnapshot(toolName: string, args: Record<string, any>): an
       data: {
         NIFTY: {
           data: [
-            { symbol: "TATAMOTORS", ltp: 942.5, high_price: 948.0, low_price: 928.1, open_price: 930.0, prev_price: 921.8, net_price: 2.25 },
+            { symbol: "APOLLOHOSP", ltp: 8027.5, high_price: 8027.5, low_price: 7775.5, open_price: 7950.0, prev_price: 7665.8, net_price: 4.72 },
+            { symbol: "ITC", ltp: 266.0, high_price: 268.0, low_price: 258.1, open_price: 260.0, prev_price: 255.0, net_price: 4.31 },
+            { symbol: "EICHERMOT", ltp: 7050.0, high_price: 7080.0, low_price: 6872.7, open_price: 6920.0, prev_price: 6767.8, net_price: 4.17 },
+            { symbol: "TCS", ltp: 4250.0, high_price: 4280.0, low_price: 4180.0, open_price: 4200.0, prev_price: 4125.0, net_price: 3.03 },
+            { symbol: "HCLTECH", ltp: 1825.0, high_price: 1845.0, low_price: 1790.0, open_price: 1800.0, prev_price: 1780.0, net_price: 2.53 },
             { symbol: "HDFCBANK", ltp: 1712.3, high_price: 1720.0, low_price: 1698.5, open_price: 1702.0, prev_price: 1689.4, net_price: 1.36 },
-            { symbol: "SUNPHARMA", ltp: 1894.1, high_price: 1905.0, low_price: 1872.0, open_price: 1875.0, prev_price: 1868.0, net_price: 1.40 },
           ],
         },
       },

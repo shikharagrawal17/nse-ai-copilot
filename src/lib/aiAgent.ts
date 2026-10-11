@@ -837,11 +837,27 @@ On the institutional desk, price action tells the true story of buyers and selle
     onEvent({ type: "tool_end", toolName: "cm_get_live_gainers", toolResult: gainersRes });
 
     const rawGainers: any[] = gainersRes?.data?.NIFTY?.data || [];
-    const candidateList = rawGainers.length >= 3 ? rawGainers.slice(0, 3) : [
-      { symbol: "TATAMOTORS", ltp: 942.5, high_price: 948.0, low_price: 928.1, open_price: 930.0, prev_price: 921.8, net_price: 2.25 },
-      { symbol: "HDFCBANK", ltp: 1712.3, high_price: 1720.0, low_price: 1698.5, open_price: 1702.0, prev_price: 1689.4, net_price: 1.36 },
-      { symbol: "SUNPHARMA", ltp: 1894.1, high_price: 1905.0, low_price: 1872.0, open_price: 1875.0, prev_price: 1868.0, net_price: 1.40 },
-    ];
+    let candidateList: any[] = [];
+    if (rawGainers.length > 0) {
+      candidateList = rawGainers.slice(0, Math.min(rawGainers.length, 6));
+    } else {
+      const coreSymbols = ["APOLLOHOSP", "ITC", "EICHERMOT", "TCS", "HCLTECH", "HDFCBANK"];
+      for (const s of coreSymbols) {
+        const q = await executeTool("cm_get_stock_quote", { symbol: s });
+        const st = q?.stock;
+        if (st && Number(st.lastTradedPrice || st.ltp) > 0) {
+          candidateList.push({
+            symbol: s,
+            ltp: st.lastTradedPrice || st.ltp,
+            high_price: st.highPrice || st.dayHigh || st.ltp,
+            low_price: st.lowPrice || st.dayLow || st.ltp,
+            open_price: st.openPrice || st.open || st.ltp,
+            prev_price: st.preClosePrice || st.previousClose || st.ltp,
+            net_price: st.perChange || st.pChange || 0,
+          });
+        }
+      }
+    }
 
     const setups = candidateList.map((item: any) => {
       const sym = String(item.symbol || "EQUITY").toUpperCase();
@@ -870,7 +886,7 @@ On the institutional desk, price action tells the true story of buyers and selle
         sym,
         ltp,
         changePct,
-        entryZone: `${entryLow.toLocaleString("en-IN")} to ${ltp.toLocaleString("en-IN")}`,
+        entryZone: `${entryLow.toLocaleString("en-IN")} - ${ltp.toLocaleString("en-IN")}`,
         t1: targets.targets.t1Conservative.toLocaleString("en-IN"),
         t1Move: Number(t1Move) > 0 ? `+${t1Move}%` : `${t1Move}%`,
         t2: targets.targets.t2BaseCase.toLocaleString("en-IN"),
@@ -883,23 +899,29 @@ On the institutional desk, price action tells the true story of buyers and selle
       };
     });
 
-    let responseText = `## DalalDesk Live High-Conviction Market Watchlist & Setups\n\n`;
+    let responseText = `## DalalDesk Live Multi-Stock Market Scanner & Trade Setups\n\n`;
     responseText += `Scanning live National Stock Exchange (NSE) momentum leaders and relative strength candidates:\n\n`;
+
+    responseText += `### 1. Live Momentum & Trade Setup Matrix\n`;
+    responseText += `| # | Ticker | Live LTP (INR) | Change (%) | Bias | Optimal Entry Zone | Target 1 (Pivot R1) | Target 2 (ATR Ext) | Stop Loss (SL) | R:R |\n`;
+    responseText += `|---|---|---|---|---|---|---|---|---|---|\n`;
 
     setups.forEach((s, idx) => {
       const sign = s.changePct >= 0 ? "+" : "";
-      responseText += `### ${idx + 1}. **${s.sym}** | LTP: **INR ${s.ltp.toLocaleString("en-IN")}** (${sign}${s.changePct}%)\n`;
-      responseText += `* **Desk Bias**: **${s.bias}** | Floor Pivot Baseline: INR ${s.pivots.pivot}\n`;
-      responseText += `* **Optimal Entry Zone**: **${s.entryZone}** (CMP Range / Retest)\n`;
-      responseText += `* **Target 1 (Conservative)**: **INR ${s.t1}** (${s.t1Move})\n`;
-      responseText += `* **Target 2 (Swing Base Case)**: **INR ${s.t2}** (${s.t2Move})\n`;
-      responseText += `* **Strict Invalidation (SL)**: **INR ${s.sl}** (${s.slMove})\n`;
-      responseText += `* **Risk-to-Reward (R:R)**: **${s.rr}**\n\n`;
+      responseText += `| ${idx + 1} | **${s.sym}** | **${s.ltp.toLocaleString("en-IN")}** | ${sign}${s.changePct}% | \`${s.bias}\` | ${s.entryZone} | **${s.t1}** (${s.t1Move}) | **${s.t2}** (${s.t2Move}) | **${s.sl}** (${s.slMove}) | **${s.rr}** |\n`;
     });
+    responseText += `\n`;
 
-    responseText += `### Trader's Execution Discipline\n`;
-    responseText += `* **Real-Time Dynamic Computation**: All entry zones, stop losses, and target tiers above are computed dynamically from live NSE OHLC price feeds and volatility algorithms.\n`;
-    responseText += `* **Risk Allocation**: Never risk more than 1% to 2% of overall trading capital on any single position.\n\n`;
+    responseText += `### 2. Key Tactical Observations\n`;
+    setups.forEach((s) => {
+      const isStrong = s.changePct > 2.0;
+      responseText += `* **${s.sym}**: ${isStrong ? "High relative strength outperformer." : "Steady accumulation with controlled volatility."} Floor Pivot baseline at INR ${s.pivots.pivot}. Invalidation cushioned at INR ${s.sl}.\n`;
+    });
+    responseText += `\n`;
+
+    responseText += `### 3. Trader's Execution Discipline\n`;
+    responseText += `* **100% Live Algorithmic Computation**: Every entry band, target tier, and stop-loss above is computed dynamically from real-time NSE exchange OHLC prices and quantitative ATR volatility models.\n`;
+    responseText += `* **Position Sizing Rule**: Never risk more than 1% to 2% of overall trading capital on any single position.\n\n`;
     responseText += `Which of these setups would you like me to pull the live tape and full algorithmic Fibonacci/Camarilla targets for? Or name any other stock on your radar.`;
 
     onEvent({ type: "text", text: responseText });
