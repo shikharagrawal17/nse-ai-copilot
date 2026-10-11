@@ -620,7 +620,13 @@ const COMMON_NON_STOCK_WORDS = new Set([
   "REAL", "TIME", "FROM", "WITH", "MORE", "LESS", "GOOD", "MUCH", "WILL", "WOULD", "COULD", "SHOULD",
   "HAVE", "HAS", "HAD", "BEEN", "BEING", "WERE", "THEIR", "THERE", "THEN", "SOME", "SUCH", "THAN",
   "NOW", "NEW", "NEXT", "LAST", "TEST", "WANT", "LIKE", "KNOW", "THINK", "TAKE", "COME", "TRY",
-  "SURE", "FINE", "WELL", "VERY", "JUST", "EVEN", "BACK", "DOWN", "OVER", "UNDER", "AWAY", "INTO"
+  "SURE", "FINE", "WELL", "VERY", "JUST", "EVEN", "BACK", "DOWN", "OVER", "UNDER", "AWAY", "INTO",
+  "TRADE", "TRADING", "TRADER", "TRADERS", "OPTION", "OPTIONS", "CALL", "CALLS", "PUT", "PUTS",
+  "STRATEGY", "STRATEGIES", "SETUP", "SETUPS", "ENTRY", "ENTRIES", "EXIT", "EXITS", "SIZING",
+  "POSITION", "POSITIONS", "CPR", "VWAP", "EMA", "SMA", "RSI", "MACD", "ATR", "EXPIRY",
+  "EXPIRATION", "STRIKE", "STRIKES", "PREMIUM", "PREMIUMS", "BREADTH", "SENTIMENT", "SECTOR",
+  "SECTORS", "INDEX", "INDICES", "STOCK", "STOCKS", "EQUITY", "EQUITIES", "EXPERT", "MENTOR",
+  "BOT", "CHATBOT", "AGENT", "HELLO", "HI", "HEY", "GOOD", "MORNING", "EVENING", "AFTERNOON"
 ]);
 
 function isPotentialTicker(w: string): boolean {
@@ -642,7 +648,7 @@ function extractActiveSymbol(messages: ChatMessage[]): { symbol: string | null; 
   // 2. Candidate in latest message
   const candidateLatest = lastWords.find((w) => isPotentialTicker(w));
 
-  // 3. Multi-turn conversational memory: Scan prior messages backwards
+  // Multi-turn conversational memory: Scan prior messages backwards
   for (let i = messages.length - 2; i >= 0; i--) {
     const msg = messages[i];
     const headerMatch = msg.content.match(/^##\s+([A-Z0-9_\-]+)\b/m);
@@ -660,14 +666,14 @@ function extractActiveSymbol(messages: ChatMessage[]): { symbol: string | null; 
     }
   }
 
-  if (candidateLatest) return { symbol: candidateLatest, isExplicitInLatest: true };
+  // Only treat candidateLatest as a symbol if the query is specifically asking about a ticker/stock or is concise
+  if (candidateLatest && (lastWords.length <= 4 || lastMsg.toLowerCase().includes("stock") || lastMsg.toLowerCase().includes("share") || lastMsg.toLowerCase().includes("quote") || lastMsg.toLowerCase().includes("analyze"))) {
+    return { symbol: candidateLatest, isExplicitInLatest: true };
+  }
 
   return { symbol: null, isExplicitInLatest: false };
 }
 
-/**
- * Deterministic fallback analyst with multi-turn conversational context memory
- */
 /**
  * Conversational Trading Expert & Market Strategist
  * Delivers natural dialogue, actionable trade setups, masterclass strategy guidance,
@@ -699,7 +705,13 @@ What are you analyzing on the tape today? Give me a ticker or share what you are
   }
 
   // 2. Trading Strategy & Educational Questions
-  const isEducational = (lower.includes("how to trade") || lower.includes("what is cpr") || lower.includes("what is pivot") || lower.includes("risk to reward") || lower.includes("position size") || lower.includes("option") || lower.includes("straddle") || lower.includes("swing trading") || lower.includes("stop loss") || lower.includes("breakout")) && !extractActiveSymbol(messages).symbol;
+  const isEducational =
+    (lower.includes("how to") || lower.includes("how should") || lower.includes("what is cpr") ||
+     lower.includes("what is pivot") || lower.includes("risk to reward") || lower.includes("position size") ||
+     lower.includes("strategy") || lower.includes("strategies") || lower.includes("option") ||
+     lower.includes("straddle") || lower.includes("swing trading") || lower.includes("price action") ||
+     lower.includes("breakout")) &&
+    !lastUserMessage.toUpperCase().match(/\b(RELIANCE|TCS|INFY|HDFCBANK|ICICIBANK|SBIN|TATAMOTORS|MARUTI|SUNPHARMA|TITAN|BAJFINANCE|ADANIENT|WIPRO|NTPC|POWERGRID|ONGC|TATASTEEL|COALINDIA)\b/);
 
   if (isEducational) {
     let educationalText = "";
@@ -840,10 +852,11 @@ On the institutional desk, price action tells the true story of buyers and selle
       const sign = Number(pct) >= 0 ? "+" : "";
       const isBullish = algoTargets.bias.includes("BULLISH");
       const currentPrice = Number(ltp) || 1;
-      const t1Pct = ((algoTargets.targets.t1Conservative - currentPrice) / currentPrice * 100).toFixed(1);
-      const t2Pct = ((algoTargets.targets.t2BaseCase - currentPrice) / currentPrice * 100).toFixed(1);
-      const t3Pct = ((algoTargets.targets.t3Extended - currentPrice) / currentPrice * 100).toFixed(1);
-      const slPct = ((algoTargets.stopLoss.recommended - currentPrice) / currentPrice * 100).toFixed(1);
+      const fmtMove = (val: number) => val > 0 ? `+${val.toFixed(1)}%` : `${val.toFixed(1)}%`;
+      const t1Move = fmtMove((algoTargets.targets.t1Conservative - currentPrice) / currentPrice * 100);
+      const t2Move = fmtMove((algoTargets.targets.t2BaseCase - currentPrice) / currentPrice * 100);
+      const t3Move = fmtMove((algoTargets.targets.t3Extended - currentPrice) / currentPrice * 100);
+      const slMove = fmtMove((algoTargets.stopLoss.recommended - currentPrice) / currentPrice * 100);
 
       let summary = `## ${activeSymbol} Trading Desk Assessment & Trade Plan\n\n`;
       summary += `Looking at the live tape on **${activeSymbol}**, the stock is currently trading at **INR ${Number(ltp).toLocaleString("en-IN")}** (${sign}${pct}%):\n\n`;
@@ -856,10 +869,10 @@ On the institutional desk, price action tells the true story of buyers and selle
       summary += `### 2. High-Probability Trade Game Plan\n`;
       summary += `| Action Parameter | Price Level (INR) | Expected Move | Tactical Trading Notes |\n|---|---|---|---|\n`;
       summary += `| **Optimal Entry Zone** | **${Math.round(currentPrice * 0.995 * 20) / 20} to ${currentPrice.toLocaleString("en-IN")}** | CMP Range | Enter near intraday demand shelf or retest of pivot |\n`;
-      summary += `| **Target 1 (Conservative)** | **${algoTargets.targets.t1Conservative.toLocaleString("en-IN")}** | **+${t1Pct}%** | First scaling-out zone / Floor Pivot R1 |\n`;
-      summary += `| **Target 2 (Swing Base Case)** | **${algoTargets.targets.t2BaseCase.toLocaleString("en-IN")}** | **+${t2Pct}%** | Major resistance retest & 2.35x ATR target |\n`;
-      summary += `| **Target 3 (Breakout Expansion)** | **${algoTargets.targets.t3Extended.toLocaleString("en-IN")}** | **+${t3Pct}%** | 161.8% Fibonacci structural extension |\n`;
-      summary += `| **Strict Invalidation (SL)** | **${algoTargets.stopLoss.recommended.toLocaleString("en-IN")}** | **${slPct}%** | Invalidation threshold (1.25x ATR cushion) |\n`;
+      summary += `| **Target 1 (Conservative)** | **${algoTargets.targets.t1Conservative.toLocaleString("en-IN")}** | **${t1Move}** | First scaling-out zone / Floor Pivot R1 |\n`;
+      summary += `| **Target 2 (Swing Base Case)** | **${algoTargets.targets.t2BaseCase.toLocaleString("en-IN")}** | **${t2Move}** | Major resistance retest & 2.35x ATR target |\n`;
+      summary += `| **Target 3 (Breakout Expansion)** | **${algoTargets.targets.t3Extended.toLocaleString("en-IN")}** | **${t3Move}** | 161.8% Fibonacci structural extension |\n`;
+      summary += `| **Strict Invalidation (SL)** | **${algoTargets.stopLoss.recommended.toLocaleString("en-IN")}** | **${slMove}** | Invalidation threshold (1.25x ATR cushion) |\n`;
       summary += `| **Risk-to-Reward Ratio (R:R)** | **1 : ${algoTargets.riskRewardRatio}** | Asymmetric | Meets professional desk criteria (> 1:2.0) |\n\n`;
 
       summary += `### 3. Key Mathematical Reference Grid\n`;
