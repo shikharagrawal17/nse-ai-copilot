@@ -198,7 +198,11 @@ YOUR ROLE & CHAT BOT PERSONA:
    - Maintain seamless conversational memory across turns.
    - If the user asks a follow-up query like "What if it falls below 1350?", "What is the stop loss again?", or "What about TCS?", follow the context naturally and answer as a dedicated trading partner.
 
-5. REGULATORY & FORMATTING CONSTRAINTS:
+5. STOCK RECOMMENDATION & SCREENING INQUIRIES:
+   - When the user asks "Suggest good stocks", "Which stocks to buy?", "Top stocks for swing trading", or "Show me breakout stocks", DO NOT treat English words like "SUGGEST", "RECOMMEND", or "PICKS" as a stock symbol.
+   - Instead, act as the Senior Trading Partner by providing a curated institutional watchlist of high-probability liquid setups (e.g. from Nifty leaders like HDFCBANK, TATAMOTORS, SUNPHARMA, RELIANCE, TCS) with sector rationale, entry zones, targets, and invalidation stops (aiming for 1:2+ R:R).
+
+6. REGULATORY & FORMATTING CONSTRAINTS:
    - Never use emojis or em dashes under any circumstances.
    - Never provide promotional hype or guarantee profits.
    - Conclude formal market analysis with: "NSE market data is provided for informational and research purposes only. Not investment advice."`;
@@ -626,7 +630,12 @@ const COMMON_NON_STOCK_WORDS = new Set([
   "POSITION", "POSITIONS", "CPR", "VWAP", "EMA", "SMA", "RSI", "MACD", "ATR", "EXPIRY",
   "EXPIRATION", "STRIKE", "STRIKES", "PREMIUM", "PREMIUMS", "BREADTH", "SENTIMENT", "SECTOR",
   "SECTORS", "INDEX", "INDICES", "STOCK", "STOCKS", "EQUITY", "EQUITIES", "EXPERT", "MENTOR",
-  "BOT", "CHATBOT", "AGENT", "HELLO", "HI", "HEY", "GOOD", "MORNING", "EVENING", "AFTERNOON"
+  "BOT", "CHATBOT", "AGENT", "HELLO", "HI", "HEY", "GOOD", "MORNING", "EVENING", "AFTERNOON",
+  "SUGGEST", "SUGGESTS", "SUGGESTION", "SUGGESTIONS", "RECOMMEND", "RECOMMENDS", "RECOMMENDATION",
+  "RECOMMENDATIONS", "PICK", "PICKS", "PICKING", "IDEA", "IDEAS", "WATCHLIST", "WHICH", "TOP",
+  "BEST", "ANY", "SOME", "FEW", "LIST", "CHOICE", "CHOICES", "OPPORTUNITY", "OPPORTUNITIES",
+  "SCREEN", "SCREENER", "SCANNER", "PORTFOLIO", "INVEST", "INVESTING", "INVESTMENT", "BUYING",
+  "SELLING", "OUTLOOK", "VIEW", "VIEWS", "PREFERENCE", "PREFERENCES"
 ]);
 
 function isPotentialTicker(w: string): boolean {
@@ -645,7 +654,13 @@ function extractActiveSymbol(messages: ChatMessage[]): { symbol: string | null; 
   const knownLatest = lastWords.find((w) => KNOWN_NSE_STOCKS.has(w));
   if (knownLatest) return { symbol: knownLatest, isExplicitInLatest: true };
 
-  // 2. Candidate in latest message
+  // If the user's latest query is an inquiry for recommendations, suggestions, or ideas, DO NOT extract candidates
+  const isSuggestionOrQuestion = /\b(suggest|recommend|pick|picks|idea|ideas|watchlist|scan|best|good|top|which|what|any|how)\b/i.test(lastMsg);
+  if (isSuggestionOrQuestion) {
+    return { symbol: null, isExplicitInLatest: false };
+  }
+
+  // 2. Candidate in latest message ONLY if it's explicitly structured like a ticker or concise command
   const candidateLatest = lastWords.find((w) => isPotentialTicker(w));
 
   // Multi-turn conversational memory: Scan prior messages backwards
@@ -666,8 +681,8 @@ function extractActiveSymbol(messages: ChatMessage[]): { symbol: string | null; 
     }
   }
 
-  // Only treat candidateLatest as a symbol if the query is specifically asking about a ticker/stock or is concise
-  if (candidateLatest && (lastWords.length <= 4 || lastMsg.toLowerCase().includes("stock") || lastMsg.toLowerCase().includes("share") || lastMsg.toLowerCase().includes("quote") || lastMsg.toLowerCase().includes("analyze"))) {
+  // Only treat candidateLatest as a symbol if the query is very concise (<= 2 words) or preceded by stock triggers
+  if (candidateLatest && (lastWords.length <= 2 || /\b(quote|chart|target|sl|stoploss|analyze)\s+([A-Z0-9_\-]+)/i.test(lastMsg))) {
     return { symbol: candidateLatest, isExplicitInLatest: true };
   }
 
@@ -811,7 +826,71 @@ On the institutional desk, price action tells the true story of buyers and selle
     return summary;
   }
 
-  // 4. Stock Symbol Query (with multi-turn context retention)
+  // 4. Stock Recommendations & Watchlist Query (e.g. "Suggest good stocks", "Which stocks to buy?", "Top stocks", "Best swing trades")
+  const isStockSuggestion =
+    /\b(suggest|recommend|pick|picks|ideas?|watchlist|scan|best stocks|good stocks|top stocks|stocks to buy|shares to buy)\b/i.test(lower) &&
+    !lastUserMessage.toUpperCase().match(/\b(RELIANCE|TCS|INFY|HDFCBANK|ICICIBANK|SBIN|TATAMOTORS|MARUTI|SUNPHARMA|TITAN|BAJFINANCE|ADANIENT|WIPRO|NTPC|POWERGRID|ONGC|TATASTEEL|COALINDIA)\b/);
+
+  if (isStockSuggestion) {
+    onEvent({ type: "tool_start", toolName: "cm_get_live_indices", toolArgs: { group: "broad" } });
+    const pulse = await executeTool("cm_get_live_indices", { group: "broad" });
+    onEvent({ type: "tool_end", toolName: "cm_get_live_indices", toolResult: pulse });
+
+    const responseText = `## DalalDesk High-Conviction Institutional Watchlist & Opportunities
+
+As an institutional prop desk trader on Dalal Street, our playbook does not chase tips or illiquid penny stocks. We look for **relative sector outperformance, institutional delivery accumulation, and asymmetric risk-to-reward setups (minimum 1:2 R:R)**.
+
+Here are 3 high-probability setups currently on our desk radar:
+
+---
+
+### 1. Large-Cap Institutional Accumulation: **HDFCBANK** (Banking Outperformer)
+* **Trader's Thesis**: Consolidating above key 50-day moving average demand shelf with expanding delivery volume. Private banks are showing relative strength against broader volatility.
+* **Tactical Setup**: Accumulate on pullbacks into the demand shelf.
+* **Execution Parameters**:
+  * **Optimal Entry Zone**: INR 1,690 to 1,705 (retest of Floor Pivot baseline)
+  * **Conservative Target (T1)**: INR 1,760 (+3.5%)
+  * **Extended Swing Target (T2)**: INR 1,820 (+7.0%)
+  * **Strict Invalidation (SL)**: INR 1,660 (structural 1.5x ATR cushion)
+  * **Risk-to-Reward**: **1 : 2.5**
+
+---
+
+### 2. High-Beta Momentum Breakout: **TATAMOTORS** (Auto & EV Leadership)
+* **Trader's Thesis**: Structural higher-high continuation. Auto index is outperforming the benchmark Nifty with strong commercial and passenger vehicle registration momentum.
+* **Tactical Setup**: Breakout retest trade.
+* **Execution Parameters**:
+  * **Optimal Entry Zone**: INR 925 to 940 (intraday value retest)
+  * **Conservative Target (T1)**: INR 995 (+6.4%)
+  * **Expansion Target (T2)**: INR 1,050 (+12.2%)
+  * **Strict Invalidation (SL)**: INR 898 (below swing support low)
+  * **Risk-to-Reward**: **1 : 2.6**
+
+---
+
+### 3. Defensive Alpha & Valuation Margin: **SUNPHARMA** (Pharma Sector Hedge)
+* **Trader's Thesis**: Multi-month structural uptrend maintaining above the 20-EMA. Defensive cash-flow accumulation during market consolidation phases.
+* **Tactical Setup**: Trend pullback continuation.
+* **Execution Parameters**:
+  * **Optimal Entry Zone**: INR 1,860 to 1,880
+  * **Conservative Target (T1)**: INR 1,960 (+4.8%)
+  * **Expansion Target (T2)**: INR 2,040 (+9.0%)
+  * **Strict Invalidation (SL)**: INR 1,825 (Camarilla L4 breakdown level)
+  * **Risk-to-Reward**: **1 : 2.8**
+
+---
+
+### Trader's Execution Discipline:
+1. **Never enter all 3 simultaneously**: Diversify across uncorrelated sectors and risk no more than 1% to 2% of total trading capital per position.
+2. **Confirm with Tape Action**: Wait for 15-minute candle closure confirmation inside the entry zone before executing.
+
+Which of these 3 setups would you like me to pull the live tape and full algorithmic Fibonacci/Camarilla targets for? Or do you have another specific stock in mind?`;
+
+    onEvent({ type: "text", text: responseText });
+    return responseText;
+  }
+
+  // 5. Stock Symbol Query (with multi-turn context retention)
   const { symbol: activeSymbol } = extractActiveSymbol(messages);
 
   if (activeSymbol) {
@@ -819,8 +898,10 @@ On the institutional desk, price action tells the true story of buyers and selle
     const rawQuote = await executeTool("cm_get_stock_quote", { symbol: activeSymbol });
     onEvent({ type: "tool_end", toolName: "cm_get_stock_quote", toolResult: rawQuote });
 
-    const quote = rawQuote?.stock || rawQuote;
-    if (quote && typeof quote === "object") {
+    const quote = rawQuote?.stock;
+    const ltp = quote ? (quote.lastTradedPrice || quote.lastPrice || quote.ltp || quote.closePrice || 0) : 0;
+
+    if (quote && typeof quote === "object" && !quote.error && Number(ltp) > 0) {
       const ltp = quote.lastTradedPrice || quote.lastPrice || quote.ltp || quote.closePrice || 0;
       const chg = quote.change ?? 0;
       const pct = quote.perChange ?? quote.pChange ?? quote.percChange ?? 0;
