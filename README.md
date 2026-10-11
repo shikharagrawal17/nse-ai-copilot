@@ -39,6 +39,14 @@ DalalDesk provides unified institutional intelligence for the National Stock Exc
 
 ---
 
+## Live Deployment & GitHub Actions
+
+- **Live URL**: [https://shikharagrawal17.github.io/nse-ai-copilot/](https://shikharagrawal17.github.io/nse-ai-copilot/)
+- **Automated Deployment**: GitHub Actions workflow (`deploy-pages.yml`) builds and deploys static artifacts directly to GitHub Pages on every push to `main`.
+- **Continuous Integration**: GitHub Actions workflow (`ci.yml`) validates production builds and static exports on every pull request and push.
+
+---
+
 ## Local Development
 
 ```bash
@@ -47,6 +55,11 @@ npm run dev
 ```
 
 Server runs on `http://localhost:3000`.
+
+To run the static export locally:
+```bash
+npm run export
+```
 
 ---
 

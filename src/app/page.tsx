@@ -8,7 +8,7 @@ import { ChatArea, Message, ToolCallItem } from "@/components/ChatArea";
 import { ToolsExplorerDrawer } from "@/components/ToolsExplorerDrawer";
 import { ApiKeyModal } from "@/components/ApiKeyModal";
 import { DEFAULT_INVESTOR_PROFILE, InvestorProfile } from "@/lib/investorProfile";
-import { LLMProvider, PROVIDER_MODELS, DEFAULT_MODEL_FOR_PROVIDER } from "@/lib/aiAgent";
+import { LLMProvider, PROVIDER_MODELS, DEFAULT_MODEL_FOR_PROVIDER, runAgentConversation } from "@/lib/aiAgent";
 
 interface SavedSession {
   id: string;
@@ -248,6 +248,54 @@ export default function Home() {
       });
 
       if (!response.ok) {
+        if (response.status === 404 || response.status === 405) {
+          // Static deployment fallback (GitHub Pages): execute agent directly in-browser
+          let currentText = "";
+          const currentToolCalls: ToolCallItem[] = [];
+
+          await runAgentConversation(
+            newMessages.map((m) => ({ role: m.role, content: m.content })),
+            currentKey,
+            (event) => {
+              if (event.type === "tool_start") {
+                const existing = currentToolCalls.find((t) => t.id === `${event.toolName}`);
+                if (!existing) {
+                  currentToolCalls.push({
+                    id: `${event.toolName}-${Date.now()}`,
+                    name: event.toolName || "tool",
+                    args: event.toolArgs,
+                    status: "running",
+                  });
+                }
+              } else if (event.type === "tool_end") {
+                const tool = currentToolCalls.find((t) => t.name === event.toolName && t.status === "running");
+                if (tool) {
+                  tool.status = "completed";
+                  tool.result = event.toolResult;
+                }
+              } else if (event.type === "text") {
+                currentText += event.text;
+              } else if (event.type === "error") {
+                currentText += `\n\n> [!WARNING]\n> Error: ${event.error}`;
+              }
+
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMsgId
+                    ? {
+                        ...msg,
+                        content: currentText,
+                        toolCalls: [...currentToolCalls],
+                      }
+                    : msg
+                )
+              );
+            },
+            activeProvider,
+            selectedModel
+          );
+          return;
+        }
         throw new Error(`Server returned HTTP ${response.status}`);
       }
 
@@ -318,16 +366,62 @@ export default function Home() {
         }
       }
     } catch (err: any) {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === assistantMsgId
-            ? {
-                ...msg,
-                content: `Error: Failed to execute research query: ${err.message}`,
+      try {
+        let currentText = "";
+        const currentToolCalls: ToolCallItem[] = [];
+        await runAgentConversation(
+          newMessages.map((m) => ({ role: m.role, content: m.content })),
+          currentKey,
+          (event) => {
+            if (event.type === "tool_start") {
+              const existing = currentToolCalls.find((t) => t.id === `${event.toolName}`);
+              if (!existing) {
+                currentToolCalls.push({
+                  id: `${event.toolName}-${Date.now()}`,
+                  name: event.toolName || "tool",
+                  args: event.toolArgs,
+                  status: "running",
+                });
               }
-            : msg
-        )
-      );
+            } else if (event.type === "tool_end") {
+              const tool = currentToolCalls.find((t) => t.name === event.toolName && t.status === "running");
+              if (tool) {
+                tool.status = "completed";
+                tool.result = event.toolResult;
+              }
+            } else if (event.type === "text") {
+              currentText += event.text;
+            } else if (event.type === "error") {
+              currentText += `\n\n> [!WARNING]\n> Error: ${event.error}`;
+            }
+
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMsgId
+                  ? {
+                      ...msg,
+                      content: currentText,
+                      toolCalls: [...currentToolCalls],
+                    }
+                  : msg
+              )
+            );
+          },
+          activeProvider,
+          selectedModel
+        );
+      } catch (fallbackErr: any) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? {
+                  ...msg,
+                  content: `Error: Failed to execute research query: ${fallbackErr.message || err.message}`,
+                }
+              : msg
+          )
+        );
+      }
     } finally {
       setIsLoading(false);
     }
