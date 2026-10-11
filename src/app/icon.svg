@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="6" fill="#0f172a"/>
+  <!-- Precision geometric dual-feed nexus: no arrows, institutional fintech emblem -->
+  <path d="M8 8 L14 8 L14 24 L8 24 Z" fill="#00d09c" />
+  <path d="M16 12 L24 12 L24 17 L16 17 Z" fill="#387ed1" />
+  <path d="M16 19 L24 19 L24 24 L16 24 Z" fill="#387ed1" opacity="0.75" />
+</svg>
