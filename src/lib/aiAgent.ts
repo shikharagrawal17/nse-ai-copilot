@@ -198,9 +198,9 @@ YOUR ROLE & CHAT BOT PERSONA:
    - Maintain seamless conversational memory across turns.
    - If the user asks a follow-up query like "What if it falls below 1350?", "What is the stop loss again?", or "What about TCS?", follow the context naturally and answer as a dedicated trading partner.
 
-5. STOCK RECOMMENDATION & SCREENING INQUIRIES:
-   - When the user asks "Suggest good stocks", "Which stocks to buy?", "Top stocks for swing trading", or "Show me breakout stocks", DO NOT treat English words like "SUGGEST", "RECOMMEND", or "PICKS" as a stock symbol.
-   - Instead, act as the Senior Trading Partner by providing a curated institutional watchlist of high-probability liquid setups (e.g. from Nifty leaders like HDFCBANK, TATAMOTORS, SUNPHARMA, RELIANCE, TCS) with sector rationale, entry zones, targets, and invalidation stops (aiming for 1:2+ R:R).
+5. GENERAL TRADE SUGGESTIONS & IDEAS:
+   - When the user asks "Suggest trades", "Suggest stocks", "Which stocks to buy?", or "What should I trade?", DO NOT dump an unprompted table suggesting arbitrary stocks.
+   - Behave as a dedicated conversational Trading Expert and mentor: ask what time horizon (intraday vs swing) or sector they are focusing on, discuss prevailing market conditions, or invite them to give you a specific stock ticker on their radar to break down.
 
 6. REGULATORY & FORMATTING CONSTRAINTS:
    - Never use emojis or em dashes under any circumstances.
@@ -827,102 +827,22 @@ On the institutional desk, price action tells the true story of buyers and selle
   }
 
   // 4. Stock Recommendations & Watchlist Query (e.g. "Suggest good stocks", "Suggest trades", "Which stocks to buy?", "Top stocks", "Best swing trades")
+  // 4. General Trade Suggestion Inquiry (Conversational Trading Mentor Dialogue)
   const isStockSuggestion =
     /\b(suggest|recommend|pick|picks|ideas?|watchlist|scan|best stocks|good stocks|top stocks|stocks to buy|shares to buy|trades|trade ideas)\b/i.test(lower) &&
     !lastUserMessage.toUpperCase().match(/\b(RELIANCE|TCS|INFY|HDFCBANK|ICICIBANK|SBIN|TATAMOTORS|MARUTI|SUNPHARMA|TITAN|BAJFINANCE|ADANIENT|WIPRO|NTPC|POWERGRID|ONGC|TATASTEEL|COALINDIA)\b/);
 
   if (isStockSuggestion) {
-    onEvent({ type: "tool_start", toolName: "cm_get_live_gainers", toolArgs: {} });
-    const gainersRes = await executeTool("cm_get_live_gainers", {});
-    onEvent({ type: "tool_end", toolName: "cm_get_live_gainers", toolResult: gainersRes });
+    const responseText = `## DalalDesk Trading Desk Consultation
 
-    const rawGainers: any[] = gainersRes?.data?.NIFTY?.data || [];
-    let candidateList: any[] = [];
-    if (rawGainers.length > 0) {
-      candidateList = rawGainers.slice(0, Math.min(rawGainers.length, 6));
-    } else {
-      const coreSymbols = ["APOLLOHOSP", "ITC", "EICHERMOT", "TCS", "HCLTECH", "HDFCBANK"];
-      for (const s of coreSymbols) {
-        const q = await executeTool("cm_get_stock_quote", { symbol: s });
-        const st = q?.stock;
-        if (st && Number(st.lastTradedPrice || st.ltp) > 0) {
-          candidateList.push({
-            symbol: s,
-            ltp: st.lastTradedPrice || st.ltp,
-            high_price: st.highPrice || st.dayHigh || st.ltp,
-            low_price: st.lowPrice || st.dayLow || st.ltp,
-            open_price: st.openPrice || st.open || st.ltp,
-            prev_price: st.preClosePrice || st.previousClose || st.ltp,
-            net_price: st.perChange || st.pChange || 0,
-          });
-        }
-      }
-    }
+As an institutional prop trader on Dalal Street, I do not hand out arbitrary stock tips. Real, profitable trading starts with defining your edge, timeframe, and risk tolerance.
 
-    const setups = candidateList.map((item: any) => {
-      const sym = String(item.symbol || "EQUITY").toUpperCase();
-      const ltp = Number(item.ltp || item.lastPrice || item.open_price || 0);
-      const high = Number(item.high_price || item.dayHigh || ltp);
-      const low = Number(item.low_price || item.dayLow || ltp);
-      const prevClose = Number(item.prev_price || item.previousClose || ltp);
-      const changePct = Number(item.net_price || item.perChange || 0);
+### Tell me what you are looking to trade:
+1. **Trading Timeframe**: Are you looking for **Intraday momentum** (quick 15-minute to 1-hour moves) or **Swing setups** (multi-day trend continuation)?
+2. **Sector Preference**: Do you have a sector focus today (e.g. Banking, IT, Autos, Energy, FMCG)?
+3. **Specific Stocks on Your Radar**: Name any ticker you are watching (e.g. \`RELIANCE\`, \`HDFCBANK\`, \`TCS\`, \`TATAMOTORS\`, \`INFY\`, \`ITC\`), and I will pull its live tape and provide a full Trade Plan with Entry, Stop-Loss, and Target 1/2/3.
 
-      const targets = calculateAlgorithmicTargets({
-        symbol: sym,
-        ltp,
-        high,
-        low,
-        prevClose,
-        volume: 1500000,
-        changePct,
-      });
-
-      const entryLow = Math.round(ltp * 0.995 * 20) / 20;
-      const t1Move = ((targets.targets.t1Conservative - ltp) / (ltp || 1) * 100).toFixed(1);
-      const t2Move = ((targets.targets.t2BaseCase - ltp) / (ltp || 1) * 100).toFixed(1);
-      const slMove = ((targets.stopLoss.recommended - ltp) / (ltp || 1) * 100).toFixed(1);
-
-      return {
-        sym,
-        ltp,
-        changePct,
-        entryZone: `${entryLow.toLocaleString("en-IN")} - ${ltp.toLocaleString("en-IN")}`,
-        t1: targets.targets.t1Conservative.toLocaleString("en-IN"),
-        t1Move: Number(t1Move) > 0 ? `+${t1Move}%` : `${t1Move}%`,
-        t2: targets.targets.t2BaseCase.toLocaleString("en-IN"),
-        t2Move: Number(t2Move) > 0 ? `+${t2Move}%` : `${t2Move}%`,
-        sl: targets.stopLoss.recommended.toLocaleString("en-IN"),
-        slMove: `${slMove}%`,
-        rr: targets.riskRewardRatio,
-        bias: targets.bias,
-        pivots: targets.pivots,
-      };
-    });
-
-    let responseText = `## DalalDesk Live Multi-Stock Market Scanner & Trade Setups\n\n`;
-    responseText += `Scanning live National Stock Exchange (NSE) momentum leaders and relative strength candidates:\n\n`;
-
-    responseText += `### 1. Live Momentum & Trade Setup Matrix\n`;
-    responseText += `| # | Ticker | Live LTP (INR) | Change (%) | Bias | Optimal Entry Zone | Target 1 (Pivot R1) | Target 2 (ATR Ext) | Stop Loss (SL) | R:R |\n`;
-    responseText += `|---|---|---|---|---|---|---|---|---|---|\n`;
-
-    setups.forEach((s, idx) => {
-      const sign = s.changePct >= 0 ? "+" : "";
-      responseText += `| ${idx + 1} | **${s.sym}** | **${s.ltp.toLocaleString("en-IN")}** | ${sign}${s.changePct}% | \`${s.bias}\` | ${s.entryZone} | **${s.t1}** (${s.t1Move}) | **${s.t2}** (${s.t2Move}) | **${s.sl}** (${s.slMove}) | **${s.rr}** |\n`;
-    });
-    responseText += `\n`;
-
-    responseText += `### 2. Key Tactical Observations\n`;
-    setups.forEach((s) => {
-      const isStrong = s.changePct > 2.0;
-      responseText += `* **${s.sym}**: ${isStrong ? "High relative strength outperformer." : "Steady accumulation with controlled volatility."} Floor Pivot baseline at INR ${s.pivots.pivot}. Invalidation cushioned at INR ${s.sl}.\n`;
-    });
-    responseText += `\n`;
-
-    responseText += `### 3. Trader's Execution Discipline\n`;
-    responseText += `* **100% Live Algorithmic Computation**: Every entry band, target tier, and stop-loss above is computed dynamically from real-time NSE exchange OHLC prices and quantitative ATR volatility models.\n`;
-    responseText += `* **Position Sizing Rule**: Never risk more than 1% to 2% of overall trading capital on any single position.\n\n`;
-    responseText += `Which of these setups would you like me to pull the live tape and full algorithmic Fibonacci/Camarilla targets for? Or name any other stock on your radar.`;
+What stock or sector do you want to dissect?`;
 
     onEvent({ type: "text", text: responseText });
     return responseText;
