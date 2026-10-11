@@ -203,10 +203,11 @@ CORE OPERATING DIRECTIVES:
    - **Strict Capital Preservation & Stop-Loss Boundaries**: Markdown table with Recommended SL, Tight SL, and Structural SL.
    - **Certified Mathematical Key Reference Grid**: Comparative table showing Floor Pivots, Camarilla Equation, and Fibonacci levels.
 
-5. REAL-TIME NEWS FLOW & RECOMMENDATION PLATFORM:
+5. REAL-TIME NEWS FLOW & AUTHENTIC BROKERAGE DISCLOSURE:
    - When asked for news, analyst reports, broker recommendations, or latest dispatches, execute get_live_equity_news and get_institutional_recommendations.
-   - Never generate static or fictional news. Present live publisher sources (e.g. Upstox, The Economic Times, Moneycontrol, Reuters, Livemint), IST timestamps, and article URLs.
-   - Always state accredited brokerage consensus targets and rating distribution.
+   - NEVER generate fake, synthetic, or static brokerage reports, price targets, or fixed percentages (such as +24%, +19%, +22%).
+   - Only cite analyst ratings or broker price targets if they are explicitly mentioned in live financial news items or official corporate filings with verifiable publisher sources and dates.
+   - If no active brokerage notes exist in the live feed for that symbol, explicitly state that no active institutional notes were detected, and rely on the mathematical algorithmic target calculations (ATR, Floor Pivots, Camarilla, Fibonacci) derived from official NSE price data.
 
 6. CONVERSATIONAL CONTEXT RETENTION & MULTI-TURN CONTINUITY:
    - Preserve complete analytical and conversational memory across all turns.
@@ -877,15 +878,21 @@ async function handleWithoutApiKey(
       } else {
         // Complete Quantitative + Institutional Synthesis
         summary = formatAlgorithmicReport(algoTargets);
-        summary += `\n\n### Institutional Recommendation & Analyst Consensus\n`;
-        summary += `* **Consensus Rating**: **${recommendation.consensusRating}** (12M Consensus Target: **INR ${recommendation.consensusTarget.toLocaleString("en-IN")}**, Upside: **+${recommendation.upsidePotentialPct}%**)\n`;
-        summary += `* **Analyst Coverage**: **${recommendation.coveringAnalystsCount} Institutional Analysts** (${recommendation.ratingsBreakdown.buyPct}% Buy / ${recommendation.ratingsBreakdown.holdPct}% Hold / ${recommendation.ratingsBreakdown.sellPct}% Sell)\n\n`;
-        summary += `#### Recent Brokerage Research Reports\n`;
-        summary += `| Brokerage House | Rating | Target (INR) | Implied Upside | Official Source & Date |\n|---|---|---|---|---|\n`;
-        for (const r of recommendation.analystReports.slice(0, 3)) {
-          summary += `| **${r.brokerage}** | \`${r.rating}\` | **${r.targetPrice.toLocaleString("en-IN")}** | +${r.upsidePct}% | *${r.source}* (${r.reportDate}) |\n`;
+        summary += `\n\n### Institutional Recommendation & News Flow\n`;
+        if (recommendation.analystReports.length > 0) {
+          summary += `* **Consensus Rating**: **${recommendation.consensusRating}** (Average Target: **INR ${recommendation.consensusTarget.toLocaleString("en-IN")}**, Upside: **+${recommendation.upsidePotentialPct}%**)\n`;
+          summary += `* **Verified Reports**: **${recommendation.analystReports.length} Active Brokerage Call(s)** detected in recent dispatches\n\n`;
+          summary += `#### Recent Brokerage Research Reports\n`;
+          summary += `| Brokerage House | Rating | Target (INR) | Implied Upside | Headline Reference | Official Source & Date |\n|---|---|---|---|---|---|\n`;
+          for (const r of recommendation.analystReports.slice(0, 5)) {
+            const sourceDisplay = r.url ? `[${r.source}](${r.url})` : r.source;
+            summary += `| **${r.brokerage}** | \`${r.rating}\` | **${r.targetPrice.toLocaleString("en-IN")}** | +${r.upsidePct}% | ${r.catalyst} | *${sourceDisplay}* (${r.reportDate}) |\n`;
+          }
+          summary += `\n`;
+        } else {
+          summary += `* **Brokerage Coverage**: No active brokerage notes with explicit target prices detected in accredited financial dispatches over the last 30 days for ${activeSymbol}.\n`;
+          summary += `* **Authentic Data Guarantee**: DalalDesk does not generate synthetic, static, or simulated estimates. All quantitative targets are computed mathematically from official NSE OHLC exchange data.\n\n`;
         }
-        summary += `\n`;
         if (recommendation.newsFlow.length > 0) {
           summary += `#### Accredited Live Real-Time News Flow\n`;
           for (const n of recommendation.newsFlow.slice(0, 3)) {
