@@ -9,6 +9,7 @@ import { ToolsExplorerDrawer } from "@/components/ToolsExplorerDrawer";
 import { ApiKeyModal } from "@/components/ApiKeyModal";
 import { DEFAULT_INVESTOR_PROFILE, InvestorProfile } from "@/lib/investorProfile";
 import { LLMProvider, PROVIDER_MODELS, DEFAULT_MODEL_FOR_PROVIDER, runAgentConversation } from "@/lib/aiAgent";
+import { getAvailableTools } from "@/lib/mcpClient";
 
 interface SavedSession {
   id: string;
@@ -118,13 +119,23 @@ export default function Home() {
 
     // Fetch tool counts
     fetch("/api/mcp/tools")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("API route not available");
+        return res.json();
+      })
       .then((data) => {
         if (data.liveCount && data.bhavcopyCount) {
           setToolsCount({ live: data.liveCount, bhavcopy: data.bhavcopyCount });
         }
       })
-      .catch((err) => console.error(err));
+      .catch(() => {
+        // Fallback for static deployment (GitHub Pages)
+        getAvailableTools().then((tools) => {
+          const live = tools.filter((t) => t.server === "cm-market").length;
+          const bhavcopy = tools.filter((t) => t.server === "nse-bhavcopy").length;
+          setToolsCount({ live: live || 15, bhavcopy: bhavcopy || 21 });
+        }).catch(() => {});
+      });
   }, []);
 
   // Auto-persist active messages to localStorage and sync saved sessions

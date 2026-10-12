@@ -10,7 +10,7 @@ import {
   Radio,
   ArrowRight,
 } from "lucide-react";
-import { ToolDefinition } from "@/lib/mcpClient";
+import { ToolDefinition, getAvailableTools, executeTool } from "@/lib/mcpClient";
 
 interface ToolsExplorerDrawerProps {
   isOpen: boolean;
@@ -34,14 +34,32 @@ export function ToolsExplorerDrawer({
 
   useEffect(() => {
     if (isOpen && tools.length === 0) {
-      fetch("/api/mcp/tools")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.tools) {
-            setTools(data.tools);
-            setSelectedTool(data.tools[0]);
+      const loadTools = async () => {
+        try {
+          const res = await fetch("/api/mcp/tools");
+          if (res.ok) {
+            const data = await res.json();
+            if (data.tools && data.tools.length > 0) {
+              setTools(data.tools);
+              setSelectedTool(data.tools[0]);
+              return;
+            }
           }
-        });
+        } catch {
+          // Continue to client-side fallback
+        }
+
+        try {
+          const fallback = await getAvailableTools();
+          if (fallback && fallback.length > 0) {
+            setTools(fallback);
+            setSelectedTool(fallback[0]);
+          }
+        } catch (err) {
+          console.error("Failed to load tools", err);
+        }
+      };
+      loadTools();
     }
   }, [isOpen, tools.length]);
 
@@ -87,20 +105,39 @@ export function ToolsExplorerDrawer({
     if (!selectedTool) return;
     setExecuting(true);
     setExecutionResult(null);
+    const start = Date.now();
     try {
-      const res = await fetch("/api/mcp/call", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          toolName: selectedTool.name,
-          args: toolArgs,
-        }),
-      });
-      const data = await res.json();
-      setExecutionResult(data.result || data.error);
-      setDurationMs(data.durationMs);
+      let executed = false;
+      try {
+        const res = await fetch("/api/mcp/call", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            toolName: selectedTool.name,
+            args: toolArgs,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.result !== undefined || data.error) {
+            setExecutionResult(data.result || data.error);
+            setDurationMs(data.durationMs || (Date.now() - start));
+            executed = true;
+          }
+        }
+      } catch {
+        // Fallback for static deployment / network errors
+      }
+
+      if (!executed) {
+        // Direct client-side execution for GitHub Pages or static deployment
+        const result = await executeTool(selectedTool.name, toolArgs);
+        setExecutionResult(result);
+        setDurationMs(Date.now() - start);
+      }
     } catch (err: any) {
-      setExecutionResult({ error: err.message });
+      setExecutionResult({ error: err.message || "Failed to execute tool" });
+      setDurationMs(Date.now() - start);
     } finally {
       setExecuting(false);
     }
