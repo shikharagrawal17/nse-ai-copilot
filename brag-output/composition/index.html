@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>DalalDesk Launch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html, body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background-color: #f8fafc;
+        font-family: 'Inter', -apple-system, sans-serif;
+        color: #0f172a;
+        -webkit-font-smoothing: antialiased;
+      }
+      .mono {
+        font-family: 'JetBrains Mono', monospace;
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: radial-gradient(circle at 50% 0%, #ffffff 0%, #f1f5f9 100%);
+      }
+
+      /* Global Header Navigation */
+      .top-nav {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 80px;
+        background: #ffffff;
+        border-bottom: 2px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 60px;
+        z-index: 50;
+      }
+      .brand-group {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .brand-icon {
+        width: 44px;
+        height: 44px;
+        background: #0f172a;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 22px;
+      }
+      .brand-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #0f172a;
+      }
+      .status-pill {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 18px;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        border-radius: 20px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #065f46;
+      }
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #059669;
+        box-shadow: 0 0 8px #059669;
+      }
+      .latency-tag {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e3a8a;
+        background: #dbeafe;
+        padding: 4px 10px;
+        border-radius: 6px;
+      }
+
+      /* Container for scenes */
+      .scene-stage {
+        position: absolute;
+        top: 80px;
+        left: 0;
+        width: 1920px;
+        height: 1000px;
+      }
+      .scene {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Scene 1 Elements */
+      .headline-badge {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1d4ed8;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        padding: 8px 24px;
+        border-radius: 24px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-bottom: 24px;
+      }
+      .scene-title {
+        font-size: 64px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        color: #0f172a;
+        text-align: center;
+        margin-bottom: 20px;
+        line-height: 1.15;
+      }
+      .scene-sub {
+        font-size: 26px;
+        font-weight: 500;
+        color: #334155;
+        text-align: center;
+        max-width: 1100px;
+        margin-bottom: 50px;
+      }
+      .ticker-container {
+        display: flex;
+        gap: 28px;
+        width: 100%;
+        max-width: 1500px;
+        justify-content: center;
+      }
+      .index-card {
+        background: #ffffff;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 24px 32px;
+        width: 440px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      }
+      .index-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: 8px;
+      }
+      .index-val {
+        font-size: 38px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 8px;
+      }
+      .index-change-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .badge-green {
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+        font-size: 16px;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 6px;
+      }
+
+      /* Scene 2 Elements - Trade Plan */
+      .trade-plan-card {
+        background: #ffffff;
+        border: 2px solid #cbd5e1;
+        border-radius: 16px;
+        width: 1400px;
+        padding: 48px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+      }
+      .plan-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 24px;
+        margin-bottom: 32px;
+      }
+      .plan-ticker-box {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .ticker-tag {
+        font-size: 32px;
+        font-weight: 800;
+        color: #0f172a;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        padding: 6px 18px;
+        border-radius: 8px;
+      }
+      .plan-meta {
+        font-size: 20px;
+        font-weight: 600;
+        color: #334155;
+      }
+      .conviction-badge {
+        background: #0f172a;
+        color: #ffffff;
+        padding: 10px 22px;
+        border-radius: 8px;
+        font-size: 17px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .targets-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+      }
+      .target-col {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 24px;
+      }
+      .target-label {
+        font-size: 15px;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+      }
+      .target-price {
+        font-size: 34px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 8px;
+      }
+      .target-pct {
+        font-size: 17px;
+        font-weight: 700;
+        color: #065f46;
+        margin-bottom: 12px;
+      }
+      .target-desc {
+        font-size: 15px;
+        color: #334155;
+        line-height: 1.4;
+      }
+
+      /* Scene 3 Elements - Tools Explorer */
+      .tools-deck {
+        width: 1400px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .tools-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        width: 100%;
+        margin-top: 36px;
+      }
+      .tool-tile {
+        background: #ffffff;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);
+      }
+      .tool-code {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e3a8a;
+      }
+      .tool-desc {
+        font-size: 16px;
+        color: #334155;
+      }
+      .tool-latency {
+        font-size: 14px;
+        font-weight: 700;
+        color: #065f46;
+        background: #ecfdf5;
+        padding: 4px 10px;
+        border-radius: 6px;
+        align-self: flex-start;
+      }
+
+      /* Scene 4 Elements - Outro */
+      .outro-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .big-logo-icon {
+        width: 100px;
+        height: 100px;
+        background: #0f172a;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 52px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.2);
+      }
+      .outro-headline {
+        font-size: 80px;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        color: #0f172a;
+        margin-bottom: 16px;
+      }
+      .outro-tagline {
+        font-size: 32px;
+        font-weight: 600;
+        color: #1d4ed8;
+        margin-bottom: 40px;
+      }
+      .outro-pills {
+        display: flex;
+        gap: 20px;
+      }
+      .outro-pill {
+        background: #ffffff;
+        border: 2px solid #cbd5e1;
+        border-radius: 30px;
+        padding: 14px 32px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #0f172a;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="18"
+      data-width="1920"
+      data-height="1080"
+    >
+      <!-- Top Persistent Navigation Bar -->
+      <nav id="top-nav" class="top-nav clip" data-start="0" data-duration="18" data-track-index="1">
+        <div class="brand-group">
+          <div class="brand-icon">D</div>
+          <div class="brand-title">DalalDesk Terminal</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div class="status-pill">
+            <span class="status-dot"></span>
+            <span>NSE Live SSE Market Stream</span>
+          </div>
+          <span class="latency-tag mono">14ms ping</span>
+        </div>
+      </nav>
+
+      <div class="scene-stage">
+        <!-- Scene 1: Live Market Connection & Ticker Tape (0.0s - 3.5s) -->
+        <section id="scene-1" class="scene clip" data-start="0" data-duration="3.5" data-track-index="2">
+          <div class="headline-badge mono">Official NSE Feeds</div>
+          <h1 class="scene-title">Direct Exchange Intelligence.<br>Zero AI Hype.</h1>
+          <p class="scene-sub">Live streaming connectivity to 3,700+ listed equities across India's National Stock Exchange.</p>
+          <div class="ticker-container">
+            <div class="index-card">
+              <div class="index-name">NIFTY 50</div>
+              <div class="index-val mono">23,547.90</div>
+              <div class="index-change-row">
+                <span class="badge-green mono">+281.15 (+1.21%)</span>
+                <span style="font-size: 14px; color: #64748b; font-weight: 500;">High 23,612.00</span>
+              </div>
+            </div>
+            <div class="index-card">
+              <div class="index-name">NIFTY 500</div>
+              <div class="index-val mono">21,866.65</div>
+              <div class="index-change-row">
+                <span class="badge-green mono">+250.50 (+1.16%)</span>
+                <span style="font-size: 14px; color: #64748b; font-weight: 500;">High 21,928.55</span>
+              </div>
+            </div>
+            <div class="index-card">
+              <div class="index-name">NIFTY MIDCAP 100</div>
+              <div class="index-val mono">58,940.30</div>
+              <div class="index-change-row">
+                <span class="badge-green mono">+780.20 (+1.34%)</span>
+                <span style="font-size: 14px; color: #64748b; font-weight: 500;">Advance-Decline 3.2:1</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Scene 2: Quantitative Trade Plan Engine (3.5s - 10.0s) -->
+        <section id="scene-2" class="scene clip" data-start="3.5" data-duration="6.5" data-track-index="3">
+          <div class="trade-plan-card">
+            <div class="plan-header">
+              <div class="plan-ticker-box">
+                <span class="ticker-tag mono">RELIANCE</span>
+                <div class="plan-meta">
+                  <div style="font-size: 24px; font-weight: 800; color: #0f172a;">CMP: INR 1,385.40 (+1.45%)</div>
+                  <div style="font-size: 16px; color: #475569;" class="mono">ATR Volatility: INR 28.60 | Pivot S/R: Camarilla & Floor</div>
+                </div>
+              </div>
+              <div class="conviction-badge mono">
+                <span>CONVICTION SCORE: 88/100</span>
+                <span style="color: #34d399;">(92% CONFIDENCE)</span>
+              </div>
+            </div>
+            <div class="targets-grid">
+              <div class="target-col">
+                <div class="target-label">Target 1 (Conservative)</div>
+                <div class="target-price mono">INR 1,410.00</div>
+                <div class="target-pct mono">+1.78% Gain</div>
+                <div class="target-desc">First institutional scaling zone. Retest of Floor Pivot Resistance R1.</div>
+              </div>
+              <div class="target-col" style="border-color: #93c5fd; background: #f0f7ff;">
+                <div class="target-label" style="color: #1e40af;">Target 2 (Swing Base Case)</div>
+                <div class="target-price mono" style="color: #1e3a8a;">INR 1,452.60</div>
+                <div class="target-pct mono" style="color: #1d4ed8;">+4.85% Expansion</div>
+                <div class="target-desc">2.35x Average True Range target. Structural swing high confirmation.</div>
+              </div>
+              <div class="target-col">
+                <div class="target-label">Target 3 (Breakout)</div>
+                <div class="target-price mono">INR 1,488.20</div>
+                <div class="target-pct mono">+7.42% Surge</div>
+                <div class="target-desc">161.8% Fibonacci Extension shelf across weekly institutional flow.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Scene 3: 36 Official NSE MCP Endpoints (10.0s - 14.5s) -->
+        <section id="scene-3" class="scene clip" data-start="10.0" data-duration="4.5" data-track-index="4">
+          <div class="tools-deck">
+            <div class="headline-badge mono">Model Context Protocol Engine</div>
+            <h2 class="scene-title">36 Official Exchange Endpoints</h2>
+            <p class="scene-sub">Direct access to live capital market depth and historical bhavcopy archives.</p>
+            <div class="tools-grid">
+              <div class="tool-tile">
+                <div class="tool-code mono">cm_get_stock_quote</div>
+                <div class="tool-desc">Real-time LTP, 52W high/low, bids, and asks.</div>
+                <div class="tool-latency mono">9ms response</div>
+              </div>
+              <div class="tool-tile">
+                <div class="tool-code mono">cm_get_market_movers</div>
+                <div class="tool-desc">Institutional top gainers, losers, and volume surges.</div>
+                <div class="tool-latency mono">12ms response</div>
+              </div>
+              <div class="tool-tile">
+                <div class="tool-code mono">bhavcopy_historical_ohlcv</div>
+                <div class="tool-desc">20-year official daily price and volume records.</div>
+                <div class="tool-latency mono">16ms response</div>
+              </div>
+              <div class="tool-tile">
+                <div class="tool-code mono">cm_get_live_indices</div>
+                <div class="tool-desc">Broad, sectoral, and thematic benchmark indices.</div>
+                <div class="tool-latency mono">11ms response</div>
+              </div>
+              <div class="tool-tile">
+                <div class="tool-code mono">bhavcopy_market_breadth</div>
+                <div class="tool-desc">Advance/decline ratios across all active listings.</div>
+                <div class="tool-latency mono">14ms response</div>
+              </div>
+              <div class="tool-tile">
+                <div class="tool-code mono">cm_get_corporate_actions</div>
+                <div class="tool-desc">Dividends, splits, bonuses, and board meetings.</div>
+                <div class="tool-latency mono">15ms response</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Scene 4: Outro Lockup (14.5s - 18.0s) -->
+        <section id="scene-4" class="scene clip" data-start="14.5" data-duration="3.5" data-track-index="5">
+          <div class="outro-container">
+            <div class="big-logo-icon">D</div>
+            <h2 class="outro-headline">DalalDesk</h2>
+            <p class="outro-tagline">Institutional Equity Intelligence. Zero AI Hype.</p>
+            <div class="outro-pills">
+              <div class="outro-pill mono">36 MCP Endpoints</div>
+              <div class="outro-pill mono">Streamable-HTTP SSE</div>
+              <div class="outro-pill mono">Open Source on GitHub</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Audio Layer -->
+      <audio
+        id="bg-music"
+        data-start="0"
+        data-duration="18"
+        data-track-index="10"
+        data-volume="0.35"
+        src="assets/music/happy-beats-business-moves-vol-10-by-ende-dot-app.mp3"
+      ></audio>
+      <audio
+        id="sfx-switch"
+        data-start="0.4"
+        data-duration="0.5"
+        data-track-index="11"
+        data-volume="0.65"
+        src="assets/sfx/interface/switch_001.ogg"
+      ></audio>
+      <audio
+        id="sfx-drop"
+        data-start="3.6"
+        data-duration="0.11"
+        data-track-index="12"
+        data-volume="0.7"
+        src="assets/sfx/interface/drop_001.ogg"
+      ></audio>
+      <audio
+        id="sfx-click"
+        data-start="10.3"
+        data-duration="0.09"
+        data-track-index="13"
+        data-volume="0.65"
+        src="assets/sfx/ui/click1.ogg"
+      ></audio>
+      <audio
+        id="sfx-bong"
+        data-start="14.6"
+        data-duration="0.12"
+        data-track-index="14"
+        data-volume="0.75"
+        src="assets/sfx/interface/bong_001.ogg"
+      ></audio>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      // Master Timeline Duration: 18.0s
+      // Scene 1: 0.0s to 3.5s
+      tl.set("#scene-1", { opacity: 1, pointerEvents: "auto" }, 0);
+      tl.fromTo("#scene-1 .headline-badge", { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 0.2);
+      tl.fromTo("#scene-1 .scene-title", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 0.4);
+      tl.fromTo("#scene-1 .scene-sub", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 0.6);
+      tl.fromTo("#scene-1 .index-card", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.15, ease: "back.out(1.2)" }, 0.8);
+      tl.to("#scene-1", { opacity: 0, scale: 0.98, duration: 0.4, ease: "power2.in" }, 3.1);
+
+      // Scene 2: 3.5s to 10.0s
+      tl.set("#scene-2", { opacity: 1, pointerEvents: "auto" }, 3.5);
+      tl.fromTo("#scene-2 .trade-plan-card", { opacity: 0, y: 50, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: "power3.out" }, 3.5);
+      tl.fromTo("#scene-2 .target-col", { opacity: 0, y: 25 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.18, ease: "power2.out" }, 4.1);
+      tl.fromTo("#scene-2 .conviction-badge", { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.4)" }, 5.2);
+      tl.to("#scene-2", { opacity: 0, scale: 0.98, duration: 0.4, ease: "power2.in" }, 9.6);
+
+      // Scene 3: 10.0s to 14.5s
+      tl.set("#scene-3", { opacity: 1, pointerEvents: "auto" }, 10.0);
+      tl.fromTo("#scene-3 .headline-badge", { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 10.1);
+      tl.fromTo("#scene-3 .scene-title", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 10.2);
+      tl.fromTo("#scene-3 .scene-sub", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 10.4);
+      tl.fromTo("#scene-3 .tool-tile", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.1, ease: "power2.out" }, 10.5);
+      tl.to("#scene-3", { opacity: 0, scale: 0.98, duration: 0.4, ease: "power2.in" }, 14.1);
+
+      // Scene 4: 14.5s to 18.0s
+      tl.set("#scene-4", { opacity: 1, pointerEvents: "auto" }, 14.5);
+      tl.fromTo("#scene-4 .big-logo-icon", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(1.5)" }, 14.6);
+      tl.fromTo("#scene-4 .outro-headline", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 14.9);
+      tl.fromTo("#scene-4 .outro-tagline", { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 15.2);
+      tl.fromTo("#scene-4 .outro-pill", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.12, ease: "power2.out" }, 15.5);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
