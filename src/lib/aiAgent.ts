@@ -5,7 +5,7 @@ import { executeTool, getAvailableTools, ToolDefinition } from "./mcpClient";
 import { calculateAlgorithmicTargets, formatAlgorithmicReport } from "./quantAlgorithms";
 import { getEquityRecommendation, formatRecommendationReport } from "./newsAndAnalystReports";
 
-export type LLMProvider = "gemini" | "openai" | "anthropic";
+export type LLMProvider = "gemini" | "openai" | "anthropic" | "openrouter";
 
 export interface ModelOption {
   id: string;
@@ -105,12 +105,57 @@ export const PROVIDER_MODELS: Record<LLMProvider, ModelOption[]> = {
       description: "Complex institutional qualitative and macro research",
     },
   ],
+  openrouter: [
+    {
+      id: "anthropic/claude-3.5-sonnet",
+      name: "Claude 3.5 Sonnet",
+      tag: "Recommended",
+      description: "Premier intelligence for institutional equity research via OpenRouter gateway",
+    },
+    {
+      id: "deepseek/deepseek-r1",
+      name: "DeepSeek R1",
+      tag: "Quant Reasoning",
+      description: "State-of-the-art open reasoning model for mathematical trade planning",
+    },
+    {
+      id: "deepseek/deepseek-chat",
+      name: "DeepSeek V3",
+      tag: "Ultra-Fast",
+      description: "High-speed economic inference for live market tape and news analysis",
+    },
+    {
+      id: "openai/gpt-4o",
+      name: "GPT-4o",
+      tag: "Flagship",
+      description: "OpenAI flagship multimodal intelligence through OpenRouter gateway",
+    },
+    {
+      id: "meta-llama/llama-3.3-70b-instruct",
+      name: "Llama 3.3 70B",
+      tag: "Open Weights",
+      description: "Meta open-weights flagship with strong reasoning and execution",
+    },
+    {
+      id: "google/gemini-2.0-flash-001",
+      name: "Gemini 2.0 Flash",
+      tag: "Low Latency",
+      description: "Fast Google multimodal inference via unified OpenRouter endpoint",
+    },
+    {
+      id: "mistralai/mistral-large-2411",
+      name: "Mistral Large 2",
+      tag: "Advanced",
+      description: "Top-tier European foundation model with deep qualitative reasoning",
+    },
+  ],
 };
 
 export const DEFAULT_MODEL_FOR_PROVIDER: Record<LLMProvider, string> = {
   gemini: "gemini-3.8-flash",
   openai: "gpt-4o",
   anthropic: "claude-3-7-sonnet-20250219",
+  openrouter: "anthropic/claude-3.5-sonnet",
 };
 
 export interface ChatMessage {
@@ -309,7 +354,7 @@ YOUR ROLE & CHAT BOT PERSONA:
    - Conclude formal market analysis with: "NSE market data is provided for informational and research purposes only. Not investment advice."`;
 
 /**
- * Universal agent runner supporting Google Gemini, OpenAI (ChatGPT), and Anthropic (Claude)
+ * Universal agent runner supporting Google Gemini, OpenAI (ChatGPT), Anthropic (Claude), and OpenRouter
  */
 export async function runAgentConversation(
   messages: ChatMessage[],
@@ -330,6 +375,8 @@ export async function runAgentConversation(
       return await runOpenAIAgent(messages, apiKey, tools, onEvent, model);
     } else if (provider === "anthropic") {
       return await runClaudeAgent(messages, apiKey, tools, onEvent, model);
+    } else if (provider === "openrouter") {
+      return await runOpenRouterAgent(messages, apiKey, tools, onEvent, model);
     } else {
       return await runGeminiAgent(messages, apiKey, tools, onEvent, model);
     }
@@ -703,6 +750,105 @@ async function runClaudeAgent(
     } else {
       const textBlock = response.content.find((b: any) => b.type === "text") as any;
       const finalText = textBlock?.text || "No response generated.";
+      onEvent({ type: "text", text: finalText });
+      return finalText;
+    }
+  }
+
+  return "Reached maximum analysis iterations.";
+}
+
+/**
+ * OpenRouter Provider (Universal Gateway for Claude, DeepSeek, GPT-4o, Llama, Mistral)
+ */
+async function runOpenRouterAgent(
+  messages: ChatMessage[],
+  apiKey: string,
+  tools: ToolDefinition[],
+  onEvent: (event: AgentStepEvent) => void,
+  model = "anthropic/claude-3.5-sonnet"
+): Promise<string> {
+  const openrouter = new OpenAI({
+    apiKey,
+    baseURL: "https://openrouter.ai/api/v1",
+    defaultHeaders: {
+      "HTTP-Referer": "https://dalaldesk.in",
+      "X-Title": "DalalDesk Institutional Trading Copilot",
+    },
+  });
+
+  const needTools = shouldAttachTools(messages);
+  const openrouterTools: any[] = needTools
+    ? tools.map((t) => ({
+        type: "function",
+        function: {
+          name: t.name,
+          description: (t.description || t.name).slice(0, 1024),
+          parameters: t.inputSchema || { type: "object", properties: {} },
+        },
+      }))
+    : [];
+
+  const chatMessages: any[] = [
+    { role: "system", content: SYSTEM_INSTRUCTION },
+    ...messages.map((m) => ({
+      role: m.role === "model" ? "assistant" : m.role,
+      content: m.content,
+    })),
+  ];
+
+  let iterations = 0;
+  const maxIterations = 5;
+
+  while (iterations < maxIterations) {
+    iterations++;
+
+    const createParams: any = {
+      model: model || "anthropic/claude-3.5-sonnet",
+      messages: chatMessages,
+    };
+    if (needTools && openrouterTools.length > 0) {
+      createParams.tools = openrouterTools;
+      createParams.tool_choice = "auto";
+    }
+
+    const response = await openrouter.chat.completions.create(createParams);
+
+    const choice = response.choices?.[0];
+    const message = choice?.message;
+
+    if (message?.tool_calls && message.tool_calls.length > 0) {
+      chatMessages.push(message);
+
+      for (const tc of message.tool_calls) {
+        if (tc.type !== "function") continue;
+        const fnName = tc.function.name;
+        let fnArgs: any = {};
+        try {
+          fnArgs = JSON.parse(tc.function.arguments || "{}");
+        } catch {
+          fnArgs = {};
+        }
+
+        onEvent({ type: "tool_start", toolName: fnName, toolArgs: fnArgs });
+
+        let result: any;
+        try {
+          result = await executeTool(fnName, fnArgs);
+          onEvent({ type: "tool_end", toolName: fnName, toolArgs: fnArgs, toolResult: result });
+        } catch (err: any) {
+          result = { error: err.message || "Execution failed" };
+          onEvent({ type: "error", toolName: fnName, error: err.message });
+        }
+
+        chatMessages.push({
+          role: "tool",
+          tool_call_id: tc.id,
+          content: typeof result === "object" ? JSON.stringify(result) : String(result),
+        });
+      }
+    } else {
+      const finalText = message?.content || "No response generated.";
       onEvent({ type: "text", text: finalText });
       return finalText;
     }

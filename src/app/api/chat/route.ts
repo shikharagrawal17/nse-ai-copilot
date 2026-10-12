@@ -32,6 +32,11 @@ export async function POST(req: NextRequest) {
           req.headers.get("x-anthropic-api-key")?.trim() ||
           req.headers.get("x-api-key")?.trim() ||
           process.env.ANTHROPIC_API_KEY;
+      } else if (provider === "openrouter") {
+        effectiveApiKey =
+          req.headers.get("x-openrouter-api-key")?.trim() ||
+          req.headers.get("x-api-key")?.trim() ||
+          process.env.OPENROUTER_API_KEY;
       } else {
         effectiveApiKey =
           req.headers.get("x-gemini-api-key")?.trim() ||

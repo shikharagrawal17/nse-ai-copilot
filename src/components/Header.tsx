@@ -208,7 +208,7 @@ export function Header({
           <Key size={12} />
           <span>
             {apiKey
-              ? `${provider === "openai" ? "ChatGPT" : provider === "anthropic" ? "Claude" : "Gemini"} Active`
+              ? `${provider === "openai" ? "ChatGPT" : provider === "anthropic" ? "Claude" : provider === "openrouter" ? "OpenRouter" : "Gemini"} Active`
               : "AI Key Settings"}
           </span>
         </button>

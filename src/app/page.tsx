@@ -29,6 +29,7 @@ export default function Home() {
     gemini: "",
     openai: "",
     anthropic: "",
+    openrouter: "",
   });
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isToolsExplorerOpen, setIsToolsExplorerOpen] = useState(false);
@@ -72,7 +73,7 @@ export default function Home() {
 
     const savedProvider = localStorage.getItem("active_ai_provider") as LLMProvider;
     let currentProv: LLMProvider = "gemini";
-    if (savedProvider && ["gemini", "openai", "anthropic"].includes(savedProvider)) {
+    if (savedProvider && ["gemini", "openai", "anthropic", "openrouter"].includes(savedProvider)) {
       setActiveProvider(savedProvider);
       currentProv = savedProvider;
     }
@@ -97,11 +98,13 @@ export default function Home() {
     const geminiKey = localStorage.getItem("gemini_api_key") || "";
     const openaiKey = localStorage.getItem("openai_api_key") || "";
     const anthropicKey = localStorage.getItem("anthropic_api_key") || "";
+    const openrouterKey = localStorage.getItem("openrouter_api_key") || "";
 
     setApiKeys({
       gemini: geminiKey,
       openai: openaiKey,
       anthropic: anthropicKey,
+      openrouter: openrouterKey,
     });
 
     const savedProfile = localStorage.getItem("investor_profile");

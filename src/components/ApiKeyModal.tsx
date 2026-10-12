@@ -98,6 +98,13 @@ export function ApiKeyModal({
       link: "https://console.anthropic.com/settings/keys",
       linkLabel: "Anthropic Console",
     },
+    openrouter: {
+      name: "OpenRouter",
+      model: "anthropic/claude-3.5-sonnet",
+      placeholder: "sk-or-v1-...",
+      link: "https://openrouter.ai/keys",
+      linkLabel: "OpenRouter Keys",
+    },
   };
 
   const currentDetails = providerDetails[selectedProvider];
@@ -171,7 +178,7 @@ export function ApiKeyModal({
 
         {/* Provider Tabs */}
         <div style={{ display: "flex", gap: "6px", marginBottom: "18px" }}>
-          {(["gemini", "openai", "anthropic"] as LLMProvider[]).map((prov) => {
+          {(["gemini", "openai", "anthropic", "openrouter"] as LLMProvider[]).map((prov) => {
             const isTabActive = selectedProvider === prov;
             const hasKey = Boolean(apiKeys[prov]);
             return (
@@ -180,22 +187,24 @@ export function ApiKeyModal({
                 onClick={() => handleProviderTab(prov)}
                 style={{
                   flex: 1,
-                  padding: "8px 10px",
+                  padding: "8px 6px",
                   borderRadius: "4px",
                   background: isTabActive ? "#387ed1" : "#f8fafc",
                   color: isTabActive ? "#ffffff" : "#475569",
                   border: isTabActive ? "1px solid #387ed1" : "1px solid #e2e8f0",
                   cursor: "pointer",
-                  fontSize: "0.78rem",
+                  fontSize: "0.76rem",
                   fontWeight: 600,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "6px",
+                  gap: "5px",
                   transition: "all 0.15s ease"
                 }}
               >
-                <span>{prov === "gemini" ? "Gemini" : prov === "openai" ? "ChatGPT" : "Claude"}</span>
+                <span>
+                  {prov === "gemini" ? "Gemini" : prov === "openai" ? "ChatGPT" : prov === "anthropic" ? "Claude" : "OpenRouter"}
+                </span>
                 {hasKey && (
                   <span style={{
                     width: "6px",
