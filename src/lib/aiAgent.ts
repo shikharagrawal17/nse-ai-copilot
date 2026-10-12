@@ -165,6 +165,106 @@ function sanitizeSchemaForGemini(schema: any): any {
   return sanitized;
 }
 
+export const KNOWN_NSE_STOCKS = new Set([
+  "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK", "LT",
+  "AXISBANK", "TATAMOTORS", "MARUTI", "SUNPHARMA", "TITAN", "BAJFINANCE", "ADANIENT", "WIPRO", "NTPC",
+  "POWERGRID", "ONGC", "TATASTEEL", "COALINDIA", "HINDUNILVR", "ASIANPAINT", "BAJAJFINSV", "ULTRACEMCO",
+  "NESTLEIND", "JSWSTEEL", "M&M", "GRASIM", "TECHM", "HCLTECH", "INDUSINDBK", "DIVISLAB", "CIPLA",
+  "DRREDDY", "EICHERMOT", "HEROMOTOCO", "APOLLOHOSP", "TATACONSUM", "BRITANNIA", "BPCL", "ADANIPORTS",
+  "SBILIFE", "HDFCLIFE", "BAJAJ-AUTO", "SHRIRAMFIN", "TRENT", "BEL", "HAL", "VEDL", "DLF", "BHEL",
+  "GAIL", "SAIL", "IOC", "ZOMATO", "PAYTM", "JIOFIN", "TATACHEM", "TATAPOWER", "IRCTC", "RVNL"
+]);
+
+export const COMMON_NON_STOCK_WORDS = new Set([
+  "WHAT", "WHEN", "WHERE", "WHICH", "WHO", "WHOM", "WHY", "HOW", "SHOW", "TELL", "GIVE", "FIND",
+  "THIS", "THAT", "THESE", "THOSE", "QUOTE", "QUOTES", "STOCK", "STOCKS", "SHARE", "SHARES", "PRICE",
+  "PRICES", "GET", "FOR", "AND", "THE", "ABOUT", "CHECK", "FETCH", "CAN", "YOU", "PLEASE", "LATEST",
+  "CURRENT", "TODAY", "RATE", "RATES", "LOOK", "SEE", "INFO", "DATA", "VIEW", "ANALYZE", "COMPARE",
+  "DAILY", "WEEKLY", "EQUITY", "EQUITIES", "REPORT", "REPORTS", "DETAIL", "DETAILS", "CHART", "CHARTS",
+  "EXECUTE", "RUN", "SCAN", "PULL", "LOOKUP", "TERMINAL", "CERTIFIED", "ALGORITHM", "ALGORITHMS",
+  "ALGORITHMIC", "TARGET", "TARGETS", "PREDICT", "PREDICTION", "PREDICTIONS", "DECISION", "DECISIONS",
+  "MODEL", "MODELS", "MODELING", "FORECAST", "FORECASTS", "FORECASTING", "RISK", "REWARD", "PIVOT",
+  "PIVOTS", "CAMARILLA", "FIBONACCI", "SWING", "CALCULATE", "CALCULATED", "BEST", "MANY", "NEWS",
+  "RECOMMEND", "RECOMMENDS", "RECOMMENDATION", "RECOMMENDATIONS", "ANALYST", "ANALYSTS", "STATE",
+  "SOURCES", "SOURCE", "PLATFORM", "ALSO", "ACCREDITED", "INSTITUTIONAL", "RESEARCH", "BROKER",
+  "BROKERS", "BROKERAGE", "RATINGS", "RATING", "CONSENSUS", "FLOW", "STATIC", "NEED", "BETTER",
+  "FURTHER", "RESULTS", "ESULTS", "CONTEXT", "CHAT", "KEEP", "PREVIOUS", "DONT", "DOES", "EXPANSION",
+  "RATIO", "RANGE", "LEVEL", "LEVELS", "MARKET", "MARKETS", "NSE", "BSE", "NIFTY", "BANKNIFTY",
+  "STOP", "LOSS", "SL", "PROFIT", "SELL", "BUY", "ACCUMULATE", "HOLD", "REDUCE", "FEED", "LIVE",
+  "REAL", "TIME", "FROM", "WITH", "MORE", "LESS", "GOOD", "MUCH", "WILL", "WOULD", "COULD", "SHOULD",
+  "HAVE", "HAS", "HAD", "BEEN", "BEING", "WERE", "THEIR", "THERE", "THEN", "SOME", "SUCH", "THAN",
+  "NOW", "NEW", "NEXT", "LAST", "TEST", "WANT", "LIKE", "KNOW", "THINK", "TAKE", "COME", "TRY",
+  "SURE", "FINE", "WELL", "VERY", "JUST", "EVEN", "BACK", "DOWN", "OVER", "UNDER", "AWAY", "INTO",
+  "TRADE", "TRADING", "TRADER", "TRADERS", "OPTION", "OPTIONS", "CALL", "CALLS", "PUT", "PUTS",
+  "STRATEGY", "STRATEGIES", "SETUP", "SETUPS", "ENTRY", "ENTRIES", "EXIT", "EXITS", "SIZING",
+  "POSITION", "POSITIONS", "CPR", "VWAP", "EMA", "SMA", "RSI", "MACD", "ATR", "EXPIRY",
+  "EXPIRATION", "STRIKE", "STRIKES", "PREMIUM", "PREMIUMS", "BREADTH", "SENTIMENT", "SECTOR",
+  "SECTORS", "INDEX", "INDICES", "EXPERT", "MENTOR", "BOT", "CHATBOT", "AGENT", "HELLO", "HI",
+  "HEY", "MORNING", "EVENING", "AFTERNOON", "SUGGEST", "SUGGESTS", "SUGGESTION", "SUGGESTIONS",
+  "PICK", "PICKS", "PICKING", "IDEA", "IDEAS", "WATCHLIST", "TOP", "ANY", "FEW", "LIST",
+  "CHOICE", "CHOICES", "OPPORTUNITY", "OPPORTUNITIES", "SCREEN", "SCREENER", "SCANNER", "PORTFOLIO",
+  "INVEST", "INVESTING", "INVESTMENT", "BUYING", "SELLING", "OUTLOOK", "PREFERENCE", "PREFERENCES"
+]);
+
+export function isPotentialTicker(w: string): boolean {
+  if (w.length < 2 || w.length > 14) return false;
+  if (w.length === 2 && w !== "LT") return false;
+  if (COMMON_NON_STOCK_WORDS.has(w)) return false;
+  if (!isNaN(Number(w))) return false;
+  return true;
+}
+
+/**
+ * Determines whether the conversation turn actually requires invoking MCP market tools.
+ * Tools are ONLY attached when the user explicitly requests specific stock data, market indices,
+ * breadth, or ticker analytics.
+ * Otherwise, the model operates in normal, natural conversational chat mode.
+ */
+export function shouldAttachTools(messages: ChatMessage[]): boolean {
+  if (!messages || messages.length === 0) return false;
+  const lastUserMsg = [...messages].reverse().find((m) => m.role === "user")?.content || "";
+  const trimmed = lastUserMsg.trim();
+  const lower = trimmed.toLowerCase();
+
+  // 1. Guard against common conversational keywords (timeframes, sectors, greetings, acknowledgments, educational queries)
+  const isConversationalOnly =
+    /^(swing|intraday|positional|scalp|scalping|long term|short term|banking|it|tech|autos?|pharma|fmcg|energy|metals?|infra|realty|yes|no|ok|okay|thanks|thank you|cool|great|sure|fine|understood|got it|tell me|what else|why|how)\b/i.test(lower) &&
+    !/\b(quote|price|target|stop\s*loss|sl|dma|cmp|level|pe|p\/e|volume|chart|ohlc|bhavcopy)\b/i.test(lower);
+
+  if (isConversationalOnly) return false;
+
+  // 2. Guard against general stock suggestion requests without a specific ticker
+  const isGeneralSuggestion =
+    /\b(suggest|recommend|pick|picks|idea|ideas|watchlist|scan|best stocks|good stocks|top stocks|which stocks|what stocks|any stocks|what to buy|what to trade)\b/i.test(lower) &&
+    !KNOWN_NSE_STOCKS.has(trimmed.toUpperCase());
+
+  if (isGeneralSuggestion) return false;
+
+  // 3. Guard against pure greetings or generic educational questions
+  const isGreetingOrEducational =
+    /^(hi|hello|hey|good\s+morning|good\s+afternoon|good\s+evening|namaste|who\s+are\s+you|help)\b/i.test(lower) ||
+    (/\b(what is|explain|how do|how to|teach me)\b/i.test(lower) && !/\b(RELIANCE|TCS|INFY|HDFCBANK|SBIN|NIFTY)\b/i.test(trimmed));
+
+  if (isGreetingOrEducational) return false;
+
+  // 4. Check if a known stock ticker is explicitly mentioned in latest query
+  const words = trimmed.toUpperCase().match(/\b[A-Z0-9_\-]{2,14}\b/g) || [];
+  const hasKnownStock = words.some((w) => KNOWN_NSE_STOCKS.has(w));
+  if (hasKnownStock) return true;
+
+  // 5. Explicit market data or indices query
+  const hasMarketIntent =
+    /\b(nifty|banknifty|sensex|index|indices|gainers|losers|advances|declines|breadth|bhavcopy|52 week|52-week|volume shockers)\b/i.test(lower);
+  if (hasMarketIntent) return true;
+
+  // 6. Explicit command prefix like "quote XYZ", "analyze XYZ", "$XYZ"
+  if (/(?:\$|quote\s+|analyze\s+|check\s+|lookup\s+|price\s+of\s+)[A-Z0-9_\-]{2,14}\b/i.test(trimmed)) {
+    return true;
+  }
+
+  return false;
+}
+
 const SYSTEM_INSTRUCTION = `You are DalalDesk, an elite Senior Trading Expert and Market Strategist on Dalal Street.
 You have over 15 years of prop trading desk experience across Indian capital markets (NSE cash equities, F&O derivatives, and benchmark indices), coupled with live access to 36 authoritative NSE MCP tools across live market feeds and historical Bhavcopy databases.
 
@@ -175,11 +275,12 @@ YOUR ROLE & CHAT BOT PERSONA:
    - Combine technical price action (market structure, breakouts, swing high/lows, moving averages), volatility (ATR), and institutional volume flow with practical trader psychology.
    - Always emphasize risk-to-reward (aim for at least 1:2 R:R) and clear invalidation stop-loss points. Never encourage reckless leverage or emotional trading.
 
-2. INTELLIGENT TOOL USAGE (DATA-BACKED BUT CONVERSATIONAL):
-   - You have 36 real-time NSE MCP tools (live quotes, indices, gainers/losers, historical OHLCV, moving averages, corporate actions, live news).
-   - Use tools when you need to fetch real data to verify or update your analysis.
+2. INTELLIGENT TOOL USAGE (CALL TOOLS ONLY WHEN RELEVANT):
+   - You have access to real-time NSE MCP tools (live quotes, indices, gainers/losers, historical OHLCV, moving averages, live news).
+   - CALL TOOLS ONLY WHEN RELEVANT: Only invoke tools when the user explicitly requests live market data, benchmark index levels, or names a specific stock ticker to analyze.
+   - For all other queries (trading timeframes like "Swing" or "Intraday", sector preferences like "Banking" or "IT", general discussions, trading psychology, or educational questions), DO NOT call tools. Respond conversationally as an experienced trading mentor.
+   - NEVER assume or invent a stock ticker from previous example messages (e.g., if you previously listed "e.g. RELIANCE, TCS", do NOT query RELIANCE unless the user explicitly asked for it).
    - CRITICAL: Never just call tools silently and dump raw data tables. Translate the data into actionable trader insight and conversational commentary.
-   - If the user asks a general trading or educational question that does not require live data, answer conversationally with your trading desk expertise without making unnecessary tool calls.
 
 3. STRUCTURED TRADING ASSESSMENTS (WHEN ANALYZING EQUITIES):
    When the user asks for a trade setup, target prediction, or equity analysis, structure your expert response clearly:
@@ -261,11 +362,21 @@ async function runGeminiAgent(
     resolvedModel = "gemini-3.8-pro";
   }
 
-  const functionDeclarations = tools.map((t) => ({
-    name: t.name,
-    description: (t.description || t.name).slice(0, 1024),
-    parameters: sanitizeSchemaForGemini(t.inputSchema),
-  }));
+  const needTools = shouldAttachTools(messages);
+  const functionDeclarations = needTools
+    ? tools.map((t) => ({
+        name: t.name,
+        description: (t.description || t.name).slice(0, 1024),
+        parameters: sanitizeSchemaForGemini(t.inputSchema),
+      }))
+    : [];
+
+  const genConfig: any = {
+    systemInstruction: SYSTEM_INSTRUCTION,
+  };
+  if (needTools && functionDeclarations.length > 0) {
+    genConfig.tools = [{ functionDeclarations }];
+  }
 
   const contents: any[] = [];
   for (const msg of messages) {
@@ -286,10 +397,7 @@ async function runGeminiAgent(
       response = await ai.models.generateContent({
         model: resolvedModel,
         contents,
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-          tools: [{ functionDeclarations }],
-        },
+        config: genConfig,
       });
     } catch (err: any) {
       const errStr = String(err?.message || err);
@@ -311,10 +419,7 @@ async function runGeminiAgent(
           response = await ai.models.generateContent({
             model: resolvedModel,
             contents,
-            config: {
-              systemInstruction: SYSTEM_INSTRUCTION,
-              tools: [{ functionDeclarations }],
-            },
+            config: genConfig,
           });
         } catch {
           onEvent({
@@ -345,10 +450,7 @@ async function runGeminiAgent(
             response = await ai.models.generateContent({
               model: resolvedModel,
               contents,
-              config: {
-                systemInstruction: SYSTEM_INSTRUCTION,
-                tools: [{ functionDeclarations }],
-              },
+              config: genConfig,
             });
             recovered = true;
             break;
@@ -436,14 +538,17 @@ async function runOpenAIAgent(
 ): Promise<string> {
   const openai = new OpenAI({ apiKey });
 
-  const openaiTools: any[] = tools.map((t) => ({
-    type: "function",
-    function: {
-      name: t.name,
-      description: (t.description || t.name).slice(0, 1024),
-      parameters: t.inputSchema || { type: "object", properties: {} },
-    },
-  }));
+  const needTools = shouldAttachTools(messages);
+  const openaiTools: any[] = needTools
+    ? tools.map((t) => ({
+        type: "function",
+        function: {
+          name: t.name,
+          description: (t.description || t.name).slice(0, 1024),
+          parameters: t.inputSchema || { type: "object", properties: {} },
+        },
+      }))
+    : [];
 
   const chatMessages: any[] = [
     { role: "system", content: SYSTEM_INSTRUCTION },
@@ -459,12 +564,16 @@ async function runOpenAIAgent(
   while (iterations < maxIterations) {
     iterations++;
 
-    const response = await openai.chat.completions.create({
+    const createParams: any = {
       model: model || "gpt-4o",
       messages: chatMessages,
-      tools: openaiTools,
-      tool_choice: "auto",
-    });
+    };
+    if (needTools && openaiTools.length > 0) {
+      createParams.tools = openaiTools;
+      createParams.tool_choice = "auto";
+    }
+
+    const response = await openai.chat.completions.create(createParams);
 
     const choice = response.choices?.[0];
     const message = choice?.message;
@@ -521,11 +630,14 @@ async function runClaudeAgent(
 ): Promise<string> {
   const anthropic = new Anthropic({ apiKey });
 
-  const claudeTools: any[] = tools.map((t) => ({
-    name: t.name,
-    description: (t.description || t.name).slice(0, 1024),
-    input_schema: t.inputSchema || { type: "object", properties: {} },
-  }));
+  const needTools = shouldAttachTools(messages);
+  const claudeTools: any[] = needTools
+    ? tools.map((t) => ({
+        name: t.name,
+        description: (t.description || t.name).slice(0, 1024),
+        input_schema: t.inputSchema || { type: "object", properties: {} },
+      }))
+    : [];
 
   const anthropicMessages: any[] = messages
     .filter((m) => m.role !== "system")
@@ -540,13 +652,17 @@ async function runClaudeAgent(
   while (iterations < maxIterations) {
     iterations++;
 
-    const response = await anthropic.messages.create({
+    const createParams: any = {
       model: model || "claude-3-5-sonnet-20241022",
       max_tokens: 4096,
       system: SYSTEM_INSTRUCTION,
       messages: anthropicMessages,
-      tools: claudeTools,
-    });
+    };
+    if (needTools && claudeTools.length > 0) {
+      createParams.tools = claudeTools;
+    }
+
+    const response = await anthropic.messages.create(createParams);
 
     const toolUseBlocks = response.content.filter((b: any) => b.type === "tool_use");
 
@@ -595,95 +711,55 @@ async function runClaudeAgent(
   return "Reached maximum analysis iterations.";
 }
 
-const KNOWN_NSE_STOCKS = new Set([
-  "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK", "LT",
-  "AXISBANK", "TATAMOTORS", "MARUTI", "SUNPHARMA", "TITAN", "BAJFINANCE", "ADANIENT", "WIPRO", "NTPC",
-  "POWERGRID", "ONGC", "TATASTEEL", "COALINDIA", "HINDUNILVR", "ASIANPAINT", "BAJAJFINSV", "ULTRACEMCO",
-  "NESTLEIND", "JSWSTEEL", "M&M", "GRASIM", "TECHM", "HCLTECH", "INDUSINDBK", "DIVISLAB", "CIPLA",
-  "DRREDDY", "EICHERMOT", "HEROMOTOCO", "APOLLOHOSP", "TATACONSUM", "BRITANNIA", "BPCL", "ADANIPORTS",
-  "SBILIFE", "HDFCLIFE", "BAJAJ-AUTO", "SHRIRAMFIN", "TRENT", "BEL", "HAL", "VEDL", "DLF", "BHEL",
-  "GAIL", "SAIL", "IOC", "ZOMATO", "PAYTM", "JIOFIN", "TATACHEM", "TATAPOWER", "IRCTC", "RVNL"
-]);
-
-const COMMON_NON_STOCK_WORDS = new Set([
-  "WHAT", "WHEN", "WHERE", "WHICH", "WHO", "WHOM", "WHY", "HOW", "SHOW", "TELL", "GIVE", "FIND",
-  "THIS", "THAT", "THESE", "THOSE", "QUOTE", "QUOTES", "STOCK", "STOCKS", "SHARE", "SHARES", "PRICE",
-  "PRICES", "GET", "FOR", "AND", "THE", "ABOUT", "CHECK", "FETCH", "CAN", "YOU", "PLEASE", "LATEST",
-  "CURRENT", "TODAY", "RATE", "RATES", "LOOK", "SEE", "INFO", "DATA", "VIEW", "ANALYZE", "COMPARE",
-  "DAILY", "WEEKLY", "EQUITY", "EQUITIES", "REPORT", "REPORTS", "DETAIL", "DETAILS", "CHART", "CHARTS",
-  "EXECUTE", "RUN", "SCAN", "PULL", "LOOKUP", "TERMINAL", "CERTIFIED", "ALGORITHM", "ALGORITHMS",
-  "ALGORITHMIC", "TARGET", "TARGETS", "PREDICT", "PREDICTION", "PREDICTIONS", "DECISION", "DECISIONS",
-  "MODEL", "MODELS", "MODELING", "FORECAST", "FORECASTS", "FORECASTING", "RISK", "REWARD", "PIVOT",
-  "PIVOTS", "CAMARILLA", "FIBONACCI", "SWING", "CALCULATE", "CALCULATED", "BEST", "MANY", "NEWS",
-  "RECOMMEND", "RECOMMENDS", "RECOMMENDATION", "RECOMMENDATIONS", "ANALYST", "ANALYSTS", "STATE",
-  "SOURCES", "SOURCE", "PLATFORM", "ALSO", "ACCREDITED", "INSTITUTIONAL", "RESEARCH", "BROKER",
-  "BROKERS", "BROKERAGE", "RATINGS", "RATING", "CONSENSUS", "FLOW", "STATIC", "NEED", "BETTER",
-  "FURTHER", "RESULTS", "ESULTS", "CONTEXT", "CHAT", "KEEP", "PREVIOUS", "DONT", "DOES", "EXPANSION",
-  "RATIO", "RANGE", "LEVEL", "LEVELS", "MARKET", "MARKETS", "NSE", "BSE", "NIFTY", "BANKNIFTY",
-  "STOP", "LOSS", "SL", "PROFIT", "SELL", "BUY", "ACCUMULATE", "HOLD", "REDUCE", "FEED", "LIVE",
-  "REAL", "TIME", "FROM", "WITH", "MORE", "LESS", "GOOD", "MUCH", "WILL", "WOULD", "COULD", "SHOULD",
-  "HAVE", "HAS", "HAD", "BEEN", "BEING", "WERE", "THEIR", "THERE", "THEN", "SOME", "SUCH", "THAN",
-  "NOW", "NEW", "NEXT", "LAST", "TEST", "WANT", "LIKE", "KNOW", "THINK", "TAKE", "COME", "TRY",
-  "SURE", "FINE", "WELL", "VERY", "JUST", "EVEN", "BACK", "DOWN", "OVER", "UNDER", "AWAY", "INTO",
-  "TRADE", "TRADING", "TRADER", "TRADERS", "OPTION", "OPTIONS", "CALL", "CALLS", "PUT", "PUTS",
-  "STRATEGY", "STRATEGIES", "SETUP", "SETUPS", "ENTRY", "ENTRIES", "EXIT", "EXITS", "SIZING",
-  "POSITION", "POSITIONS", "CPR", "VWAP", "EMA", "SMA", "RSI", "MACD", "ATR", "EXPIRY",
-  "EXPIRATION", "STRIKE", "STRIKES", "PREMIUM", "PREMIUMS", "BREADTH", "SENTIMENT", "SECTOR",
-  "SECTORS", "INDEX", "INDICES", "STOCK", "STOCKS", "EQUITY", "EQUITIES", "EXPERT", "MENTOR",
-  "BOT", "CHATBOT", "AGENT", "HELLO", "HI", "HEY", "GOOD", "MORNING", "EVENING", "AFTERNOON",
-  "SUGGEST", "SUGGESTS", "SUGGESTION", "SUGGESTIONS", "RECOMMEND", "RECOMMENDS", "RECOMMENDATION",
-  "RECOMMENDATIONS", "PICK", "PICKS", "PICKING", "IDEA", "IDEAS", "WATCHLIST", "WHICH", "TOP",
-  "BEST", "ANY", "SOME", "FEW", "LIST", "CHOICE", "CHOICES", "OPPORTUNITY", "OPPORTUNITIES",
-  "SCREEN", "SCREENER", "SCANNER", "PORTFOLIO", "INVEST", "INVESTING", "INVESTMENT", "BUYING",
-  "SELLING", "OUTLOOK", "VIEW", "VIEWS", "PREFERENCE", "PREFERENCES"
-]);
-
-function isPotentialTicker(w: string): boolean {
-  if (w.length < 2 || w.length > 14) return false;
-  if (w.length === 2 && w !== "LT") return false;
-  if (COMMON_NON_STOCK_WORDS.has(w)) return false;
-  if (!isNaN(Number(w))) return false;
-  return true;
-}
-
 function extractActiveSymbol(messages: ChatMessage[]): { symbol: string | null; isExplicitInLatest: boolean } {
   const lastMsg = messages[messages.length - 1]?.content || "";
-  const lastWords = lastMsg.toUpperCase().match(/\b[A-Z0-9_\-]{2,14}\b/g) || [];
+  const trimmed = lastMsg.trim();
+  const lower = trimmed.toLowerCase();
 
-  // 1. High confidence: Known NSE stock ticker in latest message
-  const knownLatest = lastWords.find((w) => KNOWN_NSE_STOCKS.has(w));
-  if (knownLatest) return { symbol: knownLatest, isExplicitInLatest: true };
+  // 1. Guard: Conversational phrases, timeframe replies, sector replies, or general chat
+  const isConversational =
+    /^(swing|intraday|positional|scalp|scalping|long term|short term|banking|it|tech|autos?|pharma|fmcg|energy|metals?|infra|realty|yes|no|ok|okay|thanks|thank you|cool|great|sure|fine|understood|got it|tell me|what else|why|how)\b/i.test(lower);
+  if (isConversational) {
+    return { symbol: null, isExplicitInLatest: false };
+  }
 
-  // If the user's latest query is an inquiry for recommendations, suggestions, or ideas, DO NOT extract candidates
-  const isSuggestionOrQuestion = /\b(suggest|recommend|pick|picks|idea|ideas|watchlist|scan|best|good|top|which|what|any|how)\b/i.test(lastMsg);
+  // 2. Guard: General recommendation/strategy questions
+  const isSuggestionOrQuestion =
+    /\b(suggest|recommend|pick|picks|idea|ideas|watchlist|scan|best stocks|good stocks|top stocks|which stocks|what stocks|any stocks)\b/i.test(lower);
   if (isSuggestionOrQuestion) {
     return { symbol: null, isExplicitInLatest: false };
   }
 
-  // 2. Candidate in latest message ONLY if it's explicitly structured like a ticker or concise command
-  const candidateLatest = lastWords.find((w) => isPotentialTicker(w));
+  const lastWords = trimmed.toUpperCase().match(/\b[A-Z0-9_\-]{2,14}\b/g) || [];
 
-  // Multi-turn conversational memory: Scan prior messages backwards
-  for (let i = messages.length - 2; i >= 0; i--) {
-    const msg = messages[i];
-    const headerMatch = msg.content.match(/^##\s+([A-Z0-9_\-]+)\b/m);
-    if (headerMatch && (KNOWN_NSE_STOCKS.has(headerMatch[1]) || isPotentialTicker(headerMatch[1]))) {
-      return candidateLatest
-        ? { symbol: candidateLatest, isExplicitInLatest: true }
-        : { symbol: headerMatch[1], isExplicitInLatest: false };
-    }
-    const words = msg.content.toUpperCase().match(/\b[A-Z0-9_\-]{2,14}\b/g) || [];
-    const priorKnown = words.find((w) => KNOWN_NSE_STOCKS.has(w));
-    if (priorKnown) {
-      return candidateLatest
-        ? { symbol: candidateLatest, isExplicitInLatest: true }
-        : { symbol: priorKnown, isExplicitInLatest: false };
-    }
+  // 3. Known NSE stock ticker explicitly in latest message
+  const knownLatest = lastWords.find((w) => KNOWN_NSE_STOCKS.has(w));
+  if (knownLatest) return { symbol: knownLatest, isExplicitInLatest: true };
+
+  // 4. Explicit command prefix like "analyze XYZ", "quote XYZ", "$XYZ"
+  const explicitTickerMatch = trimmed.match(/(?:\$|quote\s+|analyze\s+|check\s+|ticker\s+|symbol\s+)([A-Z0-9_\-]{2,14})\b/i);
+  if (explicitTickerMatch && isPotentialTicker(explicitTickerMatch[1].toUpperCase())) {
+    return { symbol: explicitTickerMatch[1].toUpperCase(), isExplicitInLatest: true };
   }
 
-  // Only treat candidateLatest as a symbol if the query is very concise (<= 2 words) or preceded by stock triggers
-  if (candidateLatest && (lastWords.length <= 2 || /\b(quote|chart|target|sl|stoploss|analyze)\s+([A-Z0-9_\-]+)/i.test(lastMsg))) {
-    return { symbol: candidateLatest, isExplicitInLatest: true };
+  // 5. Isolated single token that looks like an unknown ticker (e.g. user typed just "CDSL" or "BSE")
+  if (lastWords.length === 1 && isPotentialTicker(lastWords[0])) {
+    return { symbol: lastWords[0], isExplicitInLatest: true };
+  }
+
+  // 6. Follow-up referring to previous stock ONLY if latest message contains an explicit pronoun/metric
+  const isPronounFollowUp = /\b(its?\s+(target|stop\s*loss|sl|support|resistance|dma|ema|rsi|cpr|trend)|the\s+stock|the\s+share)\b/i.test(lower);
+  if (isPronounFollowUp) {
+    for (let i = messages.length - 2; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role === "user") {
+        const words = msg.content.toUpperCase().match(/\b[A-Z0-9_\-]{2,14}\b/g) || [];
+        const priorKnown = words.find((w) => KNOWN_NSE_STOCKS.has(w));
+        if (priorKnown) {
+          return { symbol: priorKnown, isExplicitInLatest: false };
+        }
+      }
+    }
   }
 
   return { symbol: null, isExplicitInLatest: false };
@@ -699,7 +775,8 @@ async function handleWithoutApiKey(
   onEvent: (event: AgentStepEvent) => void
 ): Promise<string> {
   const lastUserMessage = messages[messages.length - 1]?.content || "";
-  const lower = lastUserMessage.toLowerCase().trim();
+  const trimmed = lastUserMessage.trim();
+  const lower = trimmed.toLowerCase();
 
   // 1. Natural Conversational Greetings
   const isGreeting = /^(hi|hello|hey|good\s+morning|good\s+afternoon|good\s+evening|namaste|who\s+are\s+you|what\s+can\s+you\s+do|how\s+are\s+you|help)\b/i.test(lower);
@@ -719,7 +796,71 @@ What are you analyzing on the tape today? Give me a ticker or share what you are
     return greetingText;
   }
 
-  // 2. Trading Strategy & Educational Questions
+  // 2. Conversational Timeframe Selection ("Swing", "Intraday", "Positional", "Scalp")
+  const isTimeframe = /^(swing|intraday|positional|scalp|scalping|long term|short term)\b/i.test(lower) ||
+    /\b(swing trading|intraday trading|day trading|scalping)\b/i.test(lower);
+
+  if (isTimeframe) {
+    let responseText = "";
+    if (lower.includes("swing")) {
+      responseText = `## DalalDesk Swing Trading Desk
+
+For swing trading on Dalal Street (holding 3 to 10 sessions), our desk filters for:
+* **Clean Base Breakouts**: Stocks breaking out of multi-week consolidation boxes with expanding delivery volume on the NSE Bhavcopy.
+* **Moving Average Confluence**: Pullbacks testing the rising 20-EMA or 50-SMA dynamic demand shelf.
+* **Defined Asymmetry**: Clear structural invalidation stop loss giving at least a 1:2.0 risk-to-reward ratio.
+
+### Which sector or stocks are you looking to swing trade?
+* **High-Beta Momentum**: Auto (Tata Motors, M&M) or Capital Goods (L&T, BEL)
+* **Institutional Value**: Private Banks (HDFC Bank, ICICI Bank)
+* **Defensive Continuation**: Pharma (Sun Pharma, Cipla) or FMCG (ITC)
+
+Tell me which ticker is on your radar (e.g. \`TATAMOTORS\`, \`HDFCBANK\`, \`ITC\`, \`TCS\`), and I will pull its live tape and map out an exact Swing Game Plan with Entry, Targets, and Stop Loss.`;
+    } else if (lower.includes("intraday") || lower.includes("scalp")) {
+      responseText = `## DalalDesk Intraday Trading Desk
+
+For intraday trading, we focus strictly on liquid large-caps and active F&O counters:
+* **Opening Range Breakout (ORB)**: Price discovery in the 9:15 to 9:45 AM window.
+* **Central Pivot Range (CPR)**: Virgin CPR tests and Floor Trader Pivots (S1/R1).
+* **Relative Volume (RVOL > 1.5)**: Ensuring institutional participation rather than retail chop.
+
+Drop any stock ticker on your radar (e.g. \`RELIANCE\`, \`INFY\`, \`TATAMOTORS\`, \`SBIN\`), and I will break down its live intraday demand/supply boundaries.`;
+    } else {
+      responseText = `## DalalDesk Positional Trading Desk
+
+For multi-week positional trades, we align with the macro 200-SMA regime and quarterly earnings momentum.
+
+Which stocks or sectors are on your radar for a positional allocation? Give me any ticker to run a structural analysis.`;
+    }
+
+    onEvent({ type: "text", text: responseText });
+    return responseText;
+  }
+
+  // 3. Conversational Sector Selection ("Banking", "IT", "Autos", "Pharma", "FMCG", "Energy")
+  const isSector = /^(banking|banks?|it|tech|autos?|pharma|fmcg|energy|metals?|infra|realty)\b/i.test(lower) ||
+    /\b(banking sector|it sector|auto sector|pharma sector)\b/i.test(lower);
+
+  if (isSector) {
+    const sectorText = `## DalalDesk Sector Overview: ${trimmed.toUpperCase()}
+
+When trading the **${trimmed.toUpperCase()}** space, look for leaders showing relative strength against the benchmark Nifty 50.
+
+### Next Step:
+Name any specific stock in this sector you would like to analyze (e.g., in Banking: \`HDFCBANK\`, \`ICICIBANK\`, \`SBIN\`; in Autos: \`TATAMOTORS\`, \`MARUTI\`; in IT: \`TCS\`, \`INFY\`), and I will pull its live NSE tape and provide the exact trade setup.`;
+    onEvent({ type: "text", text: sectorText });
+    return sectorText;
+  }
+
+  // 4. Conversational Acknowledgments ("Yes", "No", "Ok", "Thanks", "Got it")
+  const isAck = /^(yes|no|ok|okay|thanks|thank you|cool|great|sure|fine|understood|got it)\b/i.test(lower);
+  if (isAck) {
+    const ackText = `Understood. Whenever you have a specific stock or chart in mind, send me the ticker (e.g. \`RELIANCE\`, \`TCS\`, \`TATAMOTORS\`, \`HDFCBANK\`), or ask me about market breadth or option strategies. What would you like to explore next?`;
+    onEvent({ type: "text", text: ackText });
+    return ackText;
+  }
+
+  // 5. Trading Strategy & Educational Questions
   const isEducational =
     (lower.includes("how to") || lower.includes("how should") || lower.includes("what is cpr") ||
      lower.includes("what is pivot") || lower.includes("risk to reward") || lower.includes("position size") ||

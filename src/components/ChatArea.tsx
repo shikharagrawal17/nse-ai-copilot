@@ -156,12 +156,76 @@ export function ChatArea({
         {messages.length === 0 ? (
           <div style={{
             margin: "auto",
+            maxWidth: "600px",
             textAlign: "center",
-            padding: "40px 20px"
+            padding: "40px 20px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "18px"
           }}>
-            <p style={{ fontSize: "0.825rem", color: "#94a3b8", margin: 0, fontWeight: 500 }}>
-              Select an equity from the watchlist, run an institutional query from the sidebar, or search an NSE symbol below.
-            </p>
+            <div style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "12px",
+              background: "#eff6ff",
+              border: "1px solid #bfdbfe",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#387ed1"
+            }}>
+              <TrendingUp size={24} />
+            </div>
+
+            <div>
+              <h2 style={{ fontSize: "1.15rem", fontWeight: 700, color: "#0f172a", margin: "0 0 6px 0" }}>
+                DalalDesk Trading Desk
+              </h2>
+              <p style={{ fontSize: "0.825rem", color: "#64748b", margin: 0, lineHeight: 1.5 }}>
+                Senior Prop Trading Copilot with 36 live NSE market tools. Chat freely about trading setups, sector outlooks, risk management, or dissect any equity ticker.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center", marginTop: "4px" }}>
+              {[
+                { label: "Swing Trade Setup", query: "Swing setup criteria" },
+                { label: "Intraday Game Plan", query: "Intraday execution rules" },
+                { label: "Market Breadth & Mood", query: "How is market breadth today?" },
+                { label: "Analyze RELIANCE", query: "Analyze RELIANCE trade plan" },
+                { label: "Analyze TATAMOTORS", query: "Analyze TATAMOTORS trade plan" },
+                { label: "Risk Management Masterclass", query: "Explain risk management and position sizing" },
+              ].map((starter, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => onSendMessage(starter.query)}
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "18px",
+                    padding: "6px 14px",
+                    fontSize: "0.78rem",
+                    fontWeight: 500,
+                    color: "#334155",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "#387ed1";
+                    e.currentTarget.style.color = "#1e40af";
+                    e.currentTarget.style.background = "#f8fafc";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "#e2e8f0";
+                    e.currentTarget.style.color = "#334155";
+                    e.currentTarget.style.background = "#ffffff";
+                  }}
+                >
+                  {starter.label}
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           messages.map((msg) => (
@@ -171,7 +235,7 @@ export function ChatArea({
                 display: "flex",
                 flexDirection: "column",
                 gap: "5px",
-                maxWidth: msg.role === "user" ? "80%" : "92%",
+                maxWidth: msg.role === "user" ? "78%" : "94%",
                 alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
               }}
             >
@@ -197,61 +261,67 @@ export function ChatArea({
                 )}
               </div>
 
-              {/* Tool Execution Tags (Rectangular status chips) */}
+              {/* Tool Execution Tags (Sleek minimalist badges) */}
               {msg.toolCalls && msg.toolCalls.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", margin: "2px 0 4px 0" }}>
                   {msg.toolCalls.map((tc) => {
                     const isExpanded = expandedToolId === tc.id;
                     return (
                       <div
                         key={tc.id}
                         style={{
+                          display: "inline-flex",
+                          flexDirection: "column",
                           background: "#ffffff",
                           border: "1px solid #e2e8f0",
-                          borderRadius: "3px",
-                          padding: "6px 10px",
-                          fontSize: "0.75rem",
+                          borderRadius: "6px",
+                          fontSize: "0.72rem",
+                          padding: "4px 8px",
+                          boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            {tc.status === "running" ? (
-                              <span style={{ color: "#d97706", fontWeight: 600 }}>[QUERYING]</span>
-                            ) : tc.status === "completed" ? (
-                              <CheckCircle2 size={13} color="#059669" />
-                            ) : (
-                              <AlertCircle size={13} color="#dc2626" />
-                            )}
-                            <span style={{ color: "#1e293b", fontWeight: 600 }}>
-                              {tc.name}
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          {tc.status === "running" ? (
+                            <span style={{
+                              width: "6px",
+                              height: "6px",
+                              borderRadius: "50%",
+                              background: "#f59e0b",
+                              display: "inline-block"
+                            }} />
+                          ) : tc.status === "completed" ? (
+                            <CheckCircle2 size={11} color="#059669" />
+                          ) : (
+                            <AlertCircle size={11} color="#dc2626" />
+                          )}
+                          <span style={{ color: "#334155", fontWeight: 500 }}>
+                            {tc.status === "running" ? `Fetching ${tc.name}...` : tc.name}
+                          </span>
+                          {tc.args?.symbol && (
+                            <span style={{ color: "#387ed1", fontWeight: 600, fontSize: "0.68rem" }}>
+                              {tc.args.symbol}
                             </span>
-                            {tc.args && (
-                              <span style={{ color: "#64748b", fontSize: "0.7rem" }}>
-                                {JSON.stringify(tc.args)}
-                              </span>
-                            )}
-                          </div>
+                          )}
 
                           {tc.result && (
                             <button
                               onClick={() => toggleExpandTool(tc.id)}
                               style={{
-                                background: "#f8fafc",
-                                border: "1px solid #e2e8f0",
-                                color: "#475569",
-                                padding: "2px 6px",
-                                borderRadius: "2px",
+                                background: "transparent",
+                                border: "none",
+                                color: "#64748b",
+                                padding: "0 2px",
                                 cursor: "pointer",
-                                display: "flex",
+                                display: "inline-flex",
                                 alignItems: "center",
-                                gap: "4px",
-                                fontSize: "0.68rem",
+                                gap: "2px",
+                                fontSize: "0.66rem",
                                 fontWeight: 500
                               }}
+                              title={isExpanded ? "Collapse raw JSON" : "Inspect raw data"}
                             >
-                              <Code2 size={10} />
-                              <span>{isExpanded ? "Hide JSON" : "Inspect Data"}</span>
-                              {isExpanded ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                              <span>{isExpanded ? "Hide" : "Data"}</span>
+                              {isExpanded ? <ChevronUp size={9} /> : <ChevronDown size={9} />}
                             </button>
                           )}
                         </div>
@@ -259,13 +329,13 @@ export function ChatArea({
                         {isExpanded && tc.result && (
                           <pre style={{
                             marginTop: "6px",
-                            padding: "8px",
+                            padding: "6px 8px",
                             background: "#f8fafc",
                             border: "1px solid #e2e8f0",
-                            borderRadius: "2px",
-                            maxHeight: "220px",
+                            borderRadius: "4px",
+                            maxHeight: "180px",
                             overflowY: "auto",
-                            fontSize: "0.7rem",
+                            fontSize: "0.68rem",
                             fontFamily: "var(--font-mono)",
                             color: "#334155"
                           }}>
@@ -284,12 +354,15 @@ export function ChatArea({
                   background: msg.role === "user" ? "#387ed1" : "#ffffff",
                   color: msg.role === "user" ? "#ffffff" : "#1e293b",
                   border: msg.role === "user" ? "none" : "1px solid #e2e8f0",
-                  borderRadius: "4px",
-                  padding: "12px 16px",
+                  borderRadius: msg.role === "user" ? "14px 14px 2px 14px" : "14px 14px 14px 2px",
+                  padding: msg.role === "user" ? "10px 14px" : "16px 20px",
+                  boxShadow: msg.role === "user"
+                    ? "0 1px 3px rgba(56, 126, 209, 0.18)"
+                    : "0 1px 3px rgba(0,0,0,0.03)",
                 }}
               >
                 {msg.role === "user" ? (
-                  <div style={{ whiteSpace: "pre-wrap", fontSize: "0.875rem", fontWeight: 500 }}>
+                  <div style={{ whiteSpace: "pre-wrap", fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.5 }}>
                     {msg.content}
                   </div>
                 ) : (
