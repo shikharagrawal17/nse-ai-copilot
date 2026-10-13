@@ -217,8 +217,25 @@ export const KNOWN_NSE_STOCKS = new Set([
   "NESTLEIND", "JSWSTEEL", "M&M", "GRASIM", "TECHM", "HCLTECH", "INDUSINDBK", "DIVISLAB", "CIPLA",
   "DRREDDY", "EICHERMOT", "HEROMOTOCO", "APOLLOHOSP", "TATACONSUM", "BRITANNIA", "BPCL", "ADANIPORTS",
   "SBILIFE", "HDFCLIFE", "BAJAJ-AUTO", "SHRIRAMFIN", "TRENT", "BEL", "HAL", "VEDL", "DLF", "BHEL",
-  "GAIL", "SAIL", "IOC", "ZOMATO", "PAYTM", "JIOFIN", "TATACHEM", "TATAPOWER", "IRCTC", "RVNL"
+  "GAIL", "SAIL", "IOC", "ZOMATO", "PAYTM", "JIOFIN", "TATACHEM", "TATAPOWER", "IRCTC", "RVNL",
+  "APAR", "APARINDS", "POLYCAB", "KEI", "DIXON", "CDSL", "BSE", "PERSISTENT", "COFORGE", "KPITTECH", "SUZLON"
 ]);
+
+export const NSE_SYMBOL_ALIASES: Record<string, string> = {
+  APAR: "APARINDS",
+  MANDM: "M&M",
+  MM: "M&M",
+  LNT: "LT",
+  LARSON: "LT",
+  BAJAJAUTO: "BAJAJ-AUTO",
+  TATAMOTOR: "TATAMOTORS",
+  HDFCBK: "HDFCBANK",
+  ICICIBK: "ICICIBANK",
+  KOTAKBK: "KOTAKBANK",
+  AXISBK: "AXISBANK",
+  SBI: "SBIN",
+  INFOSYS: "INFY",
+};
 
 export const COMMON_NON_STOCK_WORDS = new Set([
   "WHAT", "WHEN", "WHERE", "WHICH", "WHO", "WHOM", "WHY", "HOW", "SHOW", "TELL", "GIVE", "FIND",
@@ -878,19 +895,21 @@ function extractActiveSymbol(messages: ChatMessage[]): { symbol: string | null; 
 
   const lastWords = trimmed.toUpperCase().match(/\b[A-Z0-9_\-]{2,14}\b/g) || [];
 
+  const resolveAlias = (sym: string) => NSE_SYMBOL_ALIASES[sym] || sym;
+
   // 3. Known NSE stock ticker explicitly in latest message
   const knownLatest = lastWords.find((w) => KNOWN_NSE_STOCKS.has(w));
-  if (knownLatest) return { symbol: knownLatest, isExplicitInLatest: true };
+  if (knownLatest) return { symbol: resolveAlias(knownLatest), isExplicitInLatest: true };
 
   // 4. Explicit command prefix like "analyze XYZ", "quote XYZ", "$XYZ"
   const explicitTickerMatch = trimmed.match(/(?:\$|quote\s+|analyze\s+|check\s+|ticker\s+|symbol\s+)([A-Z0-9_\-]{2,14})\b/i);
   if (explicitTickerMatch && isPotentialTicker(explicitTickerMatch[1].toUpperCase())) {
-    return { symbol: explicitTickerMatch[1].toUpperCase(), isExplicitInLatest: true };
+    return { symbol: resolveAlias(explicitTickerMatch[1].toUpperCase()), isExplicitInLatest: true };
   }
 
   // 5. Isolated single token that looks like an unknown ticker (e.g. user typed just "CDSL" or "BSE")
   if (lastWords.length === 1 && isPotentialTicker(lastWords[0])) {
-    return { symbol: lastWords[0], isExplicitInLatest: true };
+    return { symbol: resolveAlias(lastWords[0]), isExplicitInLatest: true };
   }
 
   // 6. Follow-up referring to previous stock ONLY if latest message contains an explicit pronoun/metric
@@ -902,7 +921,7 @@ function extractActiveSymbol(messages: ChatMessage[]): { symbol: string | null; 
         const words = msg.content.toUpperCase().match(/\b[A-Z0-9_\-]{2,14}\b/g) || [];
         const priorKnown = words.find((w) => KNOWN_NSE_STOCKS.has(w));
         if (priorKnown) {
-          return { symbol: priorKnown, isExplicitInLatest: false };
+          return { symbol: resolveAlias(priorKnown), isExplicitInLatest: false };
         }
       }
     }
@@ -1143,17 +1162,16 @@ What stock or sector do you want to dissect?`;
     const rawQuote = await executeTool("cm_get_stock_quote", { symbol: activeSymbol });
     onEvent({ type: "tool_end", toolName: "cm_get_stock_quote", toolResult: rawQuote });
 
-    const quote = rawQuote?.stock;
+    const quote = rawQuote?.stock || rawQuote;
     const ltp = quote ? (quote.lastTradedPrice || quote.lastPrice || quote.ltp || quote.closePrice || 0) : 0;
 
     if (quote && typeof quote === "object" && !quote.error && Number(ltp) > 0) {
-      const ltp = quote.lastTradedPrice || quote.lastPrice || quote.ltp || quote.closePrice || 0;
       const chg = quote.change ?? 0;
       const pct = quote.perChange ?? quote.pChange ?? quote.percChange ?? 0;
       const high = quote.highPrice || quote.dayHigh || quote.high || ltp;
       const low = quote.lowPrice || quote.dayLow || quote.low || ltp;
-      const high52 = quote.fiftyTwoWeekHigh || quote.high52 || quote.week52High || high;
-      const low52 = quote.fiftyTwoWeekLow || quote.low52 || quote.week52Low || low;
+      const high52 = quote.fiftyTwoWeekHigh || quote.high52 || quote.week52High || quote.nearW52High || high;
+      const low52 = quote.fiftyTwoWeekLow || quote.low52 || quote.week52Low || quote.nearW52Low || low;
       const volume = quote.volume || quote.totalTradedVolume || 0;
       const prevClose = quote.preClosePrice || quote.previousClose || ltp;
 

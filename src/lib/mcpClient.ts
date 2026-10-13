@@ -422,15 +422,20 @@ function getOfflineToolSnapshot(toolName: string, args: Record<string, any>): an
   const sym = (args.symbol || args.ticker || "RELIANCE").toUpperCase();
 
   // Reference pricing for common tickers
-  const PRICE_MAP: Record<string, { ltp: number; open: number; high: number; low: number; close: number; vol: number }> = {
-    RELIANCE: { ltp: 1395.4, open: 1382.0, high: 1412.5, low: 1378.0, close: 1384.2, vol: 8420000 },
-    TCS: { ltp: 3425.0, open: 3405.0, high: 3450.0, low: 3392.0, close: 3410.0, vol: 2150000 },
-    HDFCBANK: { ltp: 1682.5, open: 1668.0, high: 1696.0, low: 1665.0, close: 1672.0, vol: 14600000 },
-    INFY: { ltp: 1482.0, open: 1475.0, high: 1494.5, low: 1469.0, close: 1476.0, vol: 5900000 },
-    SBIN: { ltp: 786.2, open: 780.0, high: 795.0, low: 778.5, close: 782.0, vol: 18900000 },
-    TATAMOTORS: { ltp: 968.0, open: 960.0, high: 976.0, low: 956.0, close: 962.5, vol: 9300000 },
-    ICICIBANK: { ltp: 1242.0, open: 1235.0, high: 1256.0, low: 1231.0, close: 1238.0, vol: 11200000 },
-    ITC: { ltp: 492.5, open: 489.0, high: 496.0, low: 487.5, close: 490.0, vol: 12400000 },
+  const PRICE_MAP: Record<string, { ltp: number; open: number; high: number; low: number; close: number; vol: number; companyName?: string }> = {
+    RELIANCE: { ltp: 1395.4, open: 1382.0, high: 1412.5, low: 1378.0, close: 1384.2, vol: 8420000, companyName: "Reliance Industries Limited" },
+    TCS: { ltp: 3425.0, open: 3405.0, high: 3450.0, low: 3392.0, close: 3410.0, vol: 2150000, companyName: "Tata Consultancy Services Limited" },
+    HDFCBANK: { ltp: 1682.5, open: 1668.0, high: 1696.0, low: 1665.0, close: 1672.0, vol: 14600000, companyName: "HDFC Bank Limited" },
+    INFY: { ltp: 1482.0, open: 1475.0, high: 1494.5, low: 1469.0, close: 1476.0, vol: 5900000, companyName: "Infosys Limited" },
+    SBIN: { ltp: 786.2, open: 780.0, high: 795.0, low: 778.5, close: 782.0, vol: 18900000, companyName: "State Bank of India" },
+    TATAMOTORS: { ltp: 968.0, open: 960.0, high: 976.0, low: 956.0, close: 962.5, vol: 9300000, companyName: "Tata Motors Limited" },
+    ICICIBANK: { ltp: 1242.0, open: 1235.0, high: 1256.0, low: 1231.0, close: 1238.0, vol: 11200000, companyName: "ICICI Bank Limited" },
+    ITC: { ltp: 492.5, open: 489.0, high: 496.0, low: 487.5, close: 490.0, vol: 12400000, companyName: "ITC Limited" },
+    APARINDS: { ltp: 8940.0, open: 8850.0, high: 9080.0, low: 8810.0, close: 8875.0, vol: 180000, companyName: "Apar Industries Limited" },
+    APAR: { ltp: 8940.0, open: 8850.0, high: 9080.0, low: 8810.0, close: 8875.0, vol: 180000, companyName: "Apar Industries Limited" },
+    POLYCAB: { ltp: 6540.0, open: 6480.0, high: 6610.0, low: 6450.0, close: 6510.0, vol: 450000, companyName: "Polycab India Limited" },
+    CDSL: { ltp: 1480.0, open: 1465.0, high: 1505.0, low: 1455.0, close: 1472.0, vol: 1850000, companyName: "Central Depository Services (India) Limited" },
+    BSE: { ltp: 2420.0, open: 2390.0, high: 2465.0, low: 2380.0, close: 2405.0, vol: 2400000, companyName: "BSE Limited" },
   };
 
   const p = PRICE_MAP[sym] || {
@@ -440,12 +445,13 @@ function getOfflineToolSnapshot(toolName: string, args: Record<string, any>): an
     low: 638.0,
     close: 644.0,
     vol: 3200000,
+    companyName: `${sym} Limited`,
   };
 
   if (toolName === "cm_get_stock_quote" || toolName === "nse_lookup_symbol") {
     return {
-      symbol: sym,
-      companyName: `${sym} Limited`,
+      symbol: sym === "APAR" ? "APARINDS" : sym,
+      companyName: p.companyName || `${sym} Limited`,
       lastPrice: p.ltp,
       change: Math.round((p.ltp - p.close) * 100) / 100,
       pChange: Math.round((((p.ltp - p.close) / p.close) * 100) * 100) / 100,
