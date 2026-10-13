@@ -210,32 +210,291 @@ function sanitizeSchemaForGemini(schema: any): any {
   return sanitized;
 }
 
+export interface ConglomeratePeer {
+  symbol: string;
+  companyName: string;
+  sector: string;
+}
+
+export interface ConglomerateGroup {
+  groupName: string;
+  flagship: string;
+  description: string;
+  peers: ConglomeratePeer[];
+}
+
+export const CONGLOMERATE_GROUPS: Record<string, ConglomerateGroup> = {
+  TATA: {
+    groupName: "Tata Group",
+    flagship: "TATAMOTORS",
+    description: "India's premier multinational conglomerate spanning automotive, technology, steel, power, and consumer brands.",
+    peers: [
+      { symbol: "TATAMOTORS", companyName: "Tata Motors", sector: "Automotive & Electric Mobility" },
+      { symbol: "TCS", companyName: "Tata Consultancy Services", sector: "IT Services & Consulting" },
+      { symbol: "TATASTEEL", companyName: "Tata Steel", sector: "Metals & Mining" },
+      { symbol: "TATAPOWER", companyName: "Tata Power", sector: "Power Generation & Clean Energy" },
+      { symbol: "TATACONSUM", companyName: "Tata Consumer Products", sector: "FMCG & Beverages" },
+      { symbol: "TITAN", companyName: "Titan Company", sector: "Jewelry, Eyewear & Watches" },
+      { symbol: "TRENT", companyName: "Trent Limited", sector: "Retail & Apparel (Westside, Zudio)" },
+      { symbol: "TATACHEM", companyName: "Tata Chemicals", sector: "Basic & Specialty Chemicals" },
+      { symbol: "TATACOMM", companyName: "Tata Communications", sector: "Digital Telecommunications" },
+      { symbol: "TATAELXSI", companyName: "Tata Elxsi", sector: "Engineering R&D & Autonomous Tech" },
+      { symbol: "VOLTAS", companyName: "Voltas", sector: "Air Conditioning & Consumer Durables" },
+    ],
+  },
+  ADANI: {
+    groupName: "Adani Group",
+    flagship: "ADANIENT",
+    description: "Integrated infrastructure, energy, logistics, and resources conglomerate.",
+    peers: [
+      { symbol: "ADANIENT", companyName: "Adani Enterprises", sector: "Incubation, Metals & New Energy" },
+      { symbol: "ADANIPORTS", companyName: "Adani Ports & SEZ", sector: "Ports & Multimodal Logistics" },
+      { symbol: "ADANIPOWER", companyName: "Adani Power", sector: "Thermal Power Generation" },
+      { symbol: "ATGL", companyName: "Adani Total Gas", sector: "City Gas Distribution" },
+      { symbol: "ADANIGREEN", companyName: "Adani Green Energy", sector: "Solar & Wind Renewable Power" },
+      { symbol: "AWL", companyName: "Adani Wilmar", sector: "Edible Oils & Food FMCG" },
+      { symbol: "AMBUJACEM", companyName: "Ambuja Cements", sector: "Cement & Building Materials" },
+      { symbol: "ACC", companyName: "ACC Limited", sector: "Cement & Concrete" },
+    ],
+  },
+  BAJAJ: {
+    groupName: "Bajaj Group",
+    flagship: "BAJFINANCE",
+    description: "Leading financial services, insurance, and two-wheeler manufacturing group.",
+    peers: [
+      { symbol: "BAJFINANCE", companyName: "Bajaj Finance", sector: "Consumer & Commercial NBFC Lending" },
+      { symbol: "BAJAJFINSV", companyName: "Bajaj Finserv", sector: "Financial Services & Insurance Holding" },
+      { symbol: "BAJAJ-AUTO", companyName: "Bajaj Auto", sector: "Two-Wheeler & Three-Wheeler Vehicles" },
+      { symbol: "BAJAJHLDNG", companyName: "Bajaj Holdings", sector: "Strategic Investment Holding" },
+    ],
+  },
+  BIRLA: {
+    groupName: "Aditya Birla Group",
+    flagship: "GRASIM",
+    description: "Global conglomerate across cement, metals, chemicals, textiles, and financial services.",
+    peers: [
+      { symbol: "GRASIM", companyName: "Grasim Industries", sector: "Viscose Staple Fibre & Paints" },
+      { symbol: "HINDALCO", companyName: "Hindalco Industries", sector: "Aluminium & Copper Manufacturing" },
+      { symbol: "ULTRACEMCO", companyName: "UltraTech Cement", sector: "Grey Cement, White Cement & RMC" },
+      { symbol: "ABFRL", companyName: "Aditya Birla Fashion & Retail", sector: "Branded Apparel & Retail" },
+      { symbol: "ABCAPITAL", companyName: "Aditya Birla Capital", sector: "NBFC, Wealth & Asset Management" },
+    ],
+  },
+  MAHINDRA: {
+    groupName: "Mahindra Group",
+    flagship: "M&M",
+    description: "Multinational group leading in SUVs, farm tractors, IT, and financial services.",
+    peers: [
+      { symbol: "M&M", companyName: "Mahindra & Mahindra", sector: "Automotive, SUVs & Farm Equipment" },
+      { symbol: "TECHM", companyName: "Tech Mahindra", sector: "Telecommunication & Enterprise IT" },
+      { symbol: "MMFIN", companyName: "Mahindra Financial Services", sector: "Rural & Semi-Urban NBFC Financing" },
+      { symbol: "MAHLOG", companyName: "Mahindra Logistics", sector: "Supply Chain & Third-Party Logistics" },
+    ],
+  },
+  HDFC: {
+    groupName: "HDFC Group",
+    flagship: "HDFCBANK",
+    description: "India's premier private banking, insurance, and asset management financial conglomerate.",
+    peers: [
+      { symbol: "HDFCBANK", companyName: "HDFC Bank", sector: "Private Sector Commercial Banking" },
+      { symbol: "HDFCLIFE", companyName: "HDFC Life Insurance", sector: "Life Insurance & Pension Solutions" },
+      { symbol: "HDFCAMC", companyName: "HDFC Asset Management", sector: "Mutual Fund & Portfolio Management" },
+    ],
+  },
+  ICICI: {
+    groupName: "ICICI Group",
+    flagship: "ICICIBANK",
+    description: "Major financial services conglomerate with banking, life, and general insurance entities.",
+    peers: [
+      { symbol: "ICICIBANK", companyName: "ICICI Bank", sector: "Private Sector Universal Banking" },
+      { symbol: "ICICIPRULI", companyName: "ICICI Prudential Life", sector: "Life Insurance & Wealth Products" },
+      { symbol: "ICICIGI", companyName: "ICICI Lombard", sector: "General, Health & Auto Insurance" },
+    ],
+  },
+  GODREJ: {
+    groupName: "Godrej Group",
+    flagship: "GODREJCP",
+    description: "Diversified consumer goods, real estate, and agricultural enterprise.",
+    peers: [
+      { symbol: "GODREJCP", companyName: "Godrej Consumer Products", sector: "Personal Care & Home Insecticides" },
+      { symbol: "GODREJPROP", companyName: "Godrej Properties", sector: "Residential & Commercial Real Estate" },
+      { symbol: "GODREJIND", companyName: "Godrej Industries", sector: "Holding Company & Oleochemicals" },
+    ],
+  },
+  RELIANCE: {
+    groupName: "Reliance Group",
+    flagship: "RELIANCE",
+    description: "India's largest enterprise across refining, petrochemicals, telecom (Jio), and retail.",
+    peers: [
+      { symbol: "RELIANCE", companyName: "Reliance Industries", sector: "Energy, Refining, Telecom & Retail" },
+      { symbol: "JIOFIN", companyName: "Jio Financial Services", sector: "Fintech, Lending & Asset Management" },
+    ],
+  },
+};
+
 export const KNOWN_NSE_STOCKS = new Set([
-  "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK", "LT",
-  "AXISBANK", "TATAMOTORS", "MARUTI", "SUNPHARMA", "TITAN", "BAJFINANCE", "ADANIENT", "WIPRO", "NTPC",
-  "POWERGRID", "ONGC", "TATASTEEL", "COALINDIA", "HINDUNILVR", "ASIANPAINT", "BAJAJFINSV", "ULTRACEMCO",
-  "NESTLEIND", "JSWSTEEL", "M&M", "GRASIM", "TECHM", "HCLTECH", "INDUSINDBK", "DIVISLAB", "CIPLA",
-  "DRREDDY", "EICHERMOT", "HEROMOTOCO", "APOLLOHOSP", "TATACONSUM", "BRITANNIA", "BPCL", "ADANIPORTS",
-  "SBILIFE", "HDFCLIFE", "BAJAJ-AUTO", "SHRIRAMFIN", "TRENT", "BEL", "HAL", "VEDL", "DLF", "BHEL",
-  "GAIL", "SAIL", "IOC", "ZOMATO", "PAYTM", "JIOFIN", "TATACHEM", "TATAPOWER", "IRCTC", "RVNL",
-  "APAR", "APARINDS", "POLYCAB", "KEI", "DIXON", "CDSL", "BSE", "PERSISTENT", "COFORGE", "KPITTECH", "SUZLON"
+  // Conglomerates & Key Search Terms
+  "TATA", "ADANI", "BAJAJ", "BIRLA", "MAHINDRA", "HDFC", "ICICI", "KOTAK", "AXIS", "GODREJ",
+  // Tata Group
+  "TATAMOTORS", "TCS", "TATASTEEL", "TATAPOWER", "TATACONSUM", "TITAN", "TRENT", "TATACHEM", "TATACOMM", "TATAELXSI", "VOLTAS",
+  // Adani Group
+  "ADANIENT", "ADANIPORTS", "ADANIPOWER", "ATGL", "ADANIGREEN", "AWL", "AMBUJACEM", "ACC",
+  // Bajaj Group
+  "BAJFINANCE", "BAJAJFINSV", "BAJAJ-AUTO", "BAJAJHLDNG",
+  // Birla Group
+  "GRASIM", "HINDALCO", "ULTRACEMCO", "ABFRL", "ABCAPITAL",
+  // Mahindra Group
+  "M&M", "TECHM", "MMFIN", "MAHLOG",
+  // Banking & Financials
+  "HDFCBANK", "HDFCLIFE", "HDFCAMC", "ICICIBANK", "ICICIPRULI", "ICICIGI", "SBIN", "KOTAKBANK", "AXISBANK", "INDUSINDBK", "FEDERALBNK", "MUTHOOTFIN", "CHOLAFIN", "SHRIRAMFIN", "SBILIFE",
+  // IT & Tech
+  "INFY", "WIPRO", "HCLTECH", "PERSISTENT", "COFORGE", "KPITTECH",
+  // Capital Goods, Infrastructure, Defence & Cables
+  "LT", "HAL", "BEL", "BHEL", "POLYCAB", "APARINDS", "KEI", "DIXON", "SUZLON", "RVNL", "IRCTC", "IRFC", "RAILTEL",
+  // Auto
+  "MARUTI", "EICHERMOT", "HEROMOTOCO", "TVSMOTOR",
+  // FMCG, Retail & Platform
+  "ITC", "HINDUNILVR", "NESTLEIND", "BRITANNIA", "ASIANPAINT", "ZOMATO", "PAYTM", "DMART", "JIOFIN",
+  // Pharma & Healthcare
+  "SUNPHARMA", "DRREDDY", "CIPLA", "APOLLOHOSP", "DIVISLAB",
+  // Energy, Power & Utilities
+  "RELIANCE", "NTPC", "POWERGRID", "ONGC", "BPCL", "IOC", "GAIL",
+  // Metals & Mining
+  "JSWSTEEL", "VEDL", "COALINDIA", "SAIL",
+  // Exchanges & Market Infra
+  "CDSL", "BSE", "MCX"
 ]);
 
 export const NSE_SYMBOL_ALIASES: Record<string, string> = {
-  APAR: "APARINDS",
+  // Conglomerates
+  TATA: "TATAMOTORS",
+  ADANI: "ADANIENT",
+  BAJAJ: "BAJFINANCE",
+  BIRLA: "GRASIM",
+  ADITYABIRLA: "GRASIM",
+  MAHINDRA: "M&M",
   MANDM: "M&M",
   MM: "M&M",
-  LNT: "LT",
-  LARSON: "LT",
-  BAJAJAUTO: "BAJAJ-AUTO",
-  TATAMOTOR: "TATAMOTORS",
+  HDFC: "HDFCBANK",
+  ICICI: "ICICIBANK",
+  KOTAK: "KOTAKBANK",
+  AXIS: "AXISBANK",
+  GODREJ: "GODREJCP",
+  AMBANI: "RELIANCE",
+
+  // Banking
+  SBI: "SBIN",
+  STATEBANK: "SBIN",
   HDFCBK: "HDFCBANK",
   ICICIBK: "ICICIBANK",
   KOTAKBK: "KOTAKBANK",
   AXISBK: "AXISBANK",
-  SBI: "SBIN",
+  INDUSIND: "INDUSINDBK",
+  FEDERAL: "FEDERALBNK",
+  MUTHOOT: "MUTHOOTFIN",
+  CHOLA: "CHOLAFIN",
+  CHOLAMANDALAM: "CHOLAFIN",
+  BAJAJFINANCE: "BAJFINANCE",
+  BAJAJFINSERV: "BAJAJFINSV",
+
+  // IT
   INFOSYS: "INFY",
+  TECHMAHINDRA: "TECHM",
+  HCL: "HCLTECH",
+  KPIT: "KPITTECH",
+
+  // Infrastructure & Cables
+  LNT: "LT",
+  LARSON: "LT",
+  LARSEN: "LT",
+  AIRTEL: "BHARTIARTL",
+  BHARTI: "BHARTIARTL",
+  APAR: "APARINDS",
+  APARIND: "APARINDS",
+
+  // Auto
+  MARUTISUZUKI: "MARUTI",
+  SUZUKI: "MARUTI",
+  TATAMOTOR: "TATAMOTORS",
+  BAJAJAUTO: "BAJAJ-AUTO",
+  EICHER: "EICHERMOT",
+  ROYALENFIELD: "EICHERMOT",
+  HERO: "HEROMOTOCO",
+  HEROHONDA: "HEROMOTOCO",
+  TVS: "TVSMOTOR",
+
+  // FMCG, Retail & Platforms
+  HUL: "HINDUNILVR",
+  UNILEVER: "HINDUNILVR",
+  HINDUSTANUNILEVER: "HINDUNILVR",
+  TATACONSUMER: "TATACONSUM",
+  TATACONS: "TATACONSUM",
+  ASIANPAINTS: "ASIANPAINT",
+  ASIAN: "ASIANPAINT",
+  JIO: "JIOFIN",
+  JIOFINANCIAL: "JIOFIN",
+  AVENUE: "DMART",
+
+  // Metals & Cement
+  JSW: "JSWSTEEL",
+  VEDANTA: "VEDL",
+  COAL: "COALINDIA",
+  ULTRATECH: "ULTRACEMCO",
+  ULTRATECHCEMENT: "ULTRACEMCO",
+  AMBUJA: "AMBUJACEM",
+
+  // Pharma
+  SUN: "SUNPHARMA",
+  REDDY: "DRREDDY",
+  APOLLO: "APOLLOHOSP",
+  APOLLOHOSPITAL: "APOLLOHOSP",
+
+  // Railways
+  RAILWAYS: "IRCTC",
 };
+
+/**
+ * Fuzzy string distance matcher to find closest official NSE tickers for typos or unknown inputs
+ */
+export function findClosestNseSymbols(query: string, maxResults = 5): { symbol: string; similarity: number }[] {
+  const q = query.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!q) return [];
+
+  const candidates = new Map<string, number>();
+
+  for (const s of KNOWN_NSE_STOCKS) {
+    const cleanS = s.replace(/[^A-Z0-9]/g, "");
+    if (cleanS === q) {
+      candidates.set(s, 1.0);
+      continue;
+    }
+    let sim = 0;
+    if (cleanS.startsWith(q) || q.startsWith(cleanS)) {
+      sim = (Math.min(cleanS.length, q.length) / Math.max(cleanS.length, q.length)) * 0.95;
+    } else if (cleanS.includes(q) || q.includes(cleanS)) {
+      sim = (Math.min(cleanS.length, q.length) / Math.max(cleanS.length, q.length)) * 0.90;
+    } else {
+      const m = q.length;
+      const n = cleanS.length;
+      const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          const cost = q[i - 1] === cleanS[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+        }
+      }
+      sim = 1 - dp[m][n] / Math.max(m, n);
+    }
+    candidates.set(s, sim);
+  }
+
+  return Array.from(candidates.entries())
+    .map(([symbol, similarity]) => ({ symbol, similarity }))
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, maxResults);
+}
 
 export const COMMON_NON_STOCK_WORDS = new Set([
   "WHAT", "WHEN", "WHERE", "WHICH", "WHO", "WHOM", "WHY", "HOW", "SHOW", "TELL", "GIVE", "FIND",
@@ -368,7 +627,11 @@ YOUR ROLE & CHAT BOT PERSONA:
 6. REGULATORY & FORMATTING CONSTRAINTS:
    - Never use emojis or em dashes under any circumstances.
    - Never provide promotional hype or guarantee profits.
-   - Conclude formal market analysis with: "NSE market data is provided for informational and research purposes only. Not investment advice."`;
+   - Conclude formal market analysis with: "NSE market data is provided for informational and research purposes only. Not investment advice."
+
+7. CONGLOMERATE & SYMBOL RESOLUTION:
+   - When the user queries a business conglomerate (e.g. TATA, ADANI, BAJAJ, BIRLA, MAHINDRA, HDFC, ICICI, GODREJ), recognize the group structure. Analyze the group flagship (e.g. TATAMOTORS for Tata, ADANIENT for Adani, BAJFINANCE for Bajaj, GRASIM for Birla, M&M for Mahindra, HDFCBANK for HDFC, ICICIBANK for ICICI) and list the other listed group companies for their inspection.
+   - Always normalize colloquial abbreviations and brand names before calling tools: SBI -> SBIN, L&T -> LT, M&M -> M&M, AIRTEL -> BHARTIARTL, HUL -> HINDUNILVR, APAR -> APARINDS, BAJAJ AUTO -> BAJAJ-AUTO.`;
 
 /**
  * Universal agent runner supporting Google Gemini, OpenAI (ChatGPT), Anthropic (Claude), and OpenRouter
@@ -874,7 +1137,16 @@ async function runOpenRouterAgent(
   return "Reached maximum analysis iterations.";
 }
 
-function extractActiveSymbol(messages: ChatMessage[]): { symbol: string | null; isExplicitInLatest: boolean } {
+export interface ActiveSymbolResolution {
+  symbol: string | null;
+  originalInput: string;
+  isExplicitInLatest: boolean;
+  conglomerate?: ConglomerateGroup;
+  resolvedFromAlias?: string;
+  fuzzyMatched?: boolean;
+}
+
+function extractActiveSymbol(messages: ChatMessage[]): ActiveSymbolResolution {
   const lastMsg = messages[messages.length - 1]?.content || "";
   const trimmed = lastMsg.trim();
   const lower = trimmed.toLowerCase();
@@ -883,51 +1155,114 @@ function extractActiveSymbol(messages: ChatMessage[]): { symbol: string | null; 
   const isConversational =
     /^(swing|intraday|positional|scalp|scalping|long term|short term|banking|it|tech|autos?|pharma|fmcg|energy|metals?|infra|realty|yes|no|ok|okay|thanks|thank you|cool|great|sure|fine|understood|got it|tell me|what else|why|how)\b/i.test(lower);
   if (isConversational) {
-    return { symbol: null, isExplicitInLatest: false };
+    return { symbol: null, originalInput: trimmed, isExplicitInLatest: false };
   }
 
   // 2. Guard: General recommendation/strategy questions
   const isSuggestionOrQuestion =
     /\b(suggest|recommend|pick|picks|idea|ideas|watchlist|scan|best stocks|good stocks|top stocks|which stocks|what stocks|any stocks)\b/i.test(lower);
   if (isSuggestionOrQuestion) {
-    return { symbol: null, isExplicitInLatest: false };
+    return { symbol: null, originalInput: trimmed, isExplicitInLatest: false };
   }
 
-  const lastWords = trimmed.toUpperCase().match(/\b[A-Z0-9_\-]{2,14}\b/g) || [];
+  // Clean candidate words from latest user prompt
+  const lastWords = trimmed.toUpperCase().match(/\b[A-Z0-9_\-&]{2,16}\b/g) || [];
 
-  const resolveAlias = (sym: string) => NSE_SYMBOL_ALIASES[sym] || sym;
+  // Check 1: Direct Conglomerate match (e.g. TATA, ADANI, BAJAJ, BIRLA, MAHINDRA, HDFC, ICICI, GODREJ)
+  for (const w of lastWords) {
+    const cleanWord = w.replace(/[^A-Z]/g, "");
+    if (CONGLOMERATE_GROUPS[cleanWord]) {
+      const group = CONGLOMERATE_GROUPS[cleanWord];
+      return {
+        symbol: group.flagship,
+        originalInput: w,
+        isExplicitInLatest: true,
+        conglomerate: group,
+      };
+    }
+  }
 
-  // 3. Known NSE stock ticker explicitly in latest message
+  // Check 2: Direct Alias match (e.g. APAR -> APARINDS, SBI -> SBIN, L&T -> LT, etc.)
+  for (const w of lastWords) {
+    const cleanKey = w.replace(/[^A-Z0-9]/g, "");
+    if (NSE_SYMBOL_ALIASES[w] || NSE_SYMBOL_ALIASES[cleanKey]) {
+      const resolved = NSE_SYMBOL_ALIASES[w] || NSE_SYMBOL_ALIASES[cleanKey];
+      return {
+        symbol: resolved,
+        originalInput: w,
+        isExplicitInLatest: true,
+        resolvedFromAlias: w,
+      };
+    }
+  }
+
+  // Check 3: Known NSE stock ticker explicitly in latest message
   const knownLatest = lastWords.find((w) => KNOWN_NSE_STOCKS.has(w));
-  if (knownLatest) return { symbol: resolveAlias(knownLatest), isExplicitInLatest: true };
-
-  // 4. Explicit command prefix like "analyze XYZ", "quote XYZ", "$XYZ"
-  const explicitTickerMatch = trimmed.match(/(?:\$|quote\s+|analyze\s+|check\s+|ticker\s+|symbol\s+)([A-Z0-9_\-]{2,14})\b/i);
-  if (explicitTickerMatch && isPotentialTicker(explicitTickerMatch[1].toUpperCase())) {
-    return { symbol: resolveAlias(explicitTickerMatch[1].toUpperCase()), isExplicitInLatest: true };
+  if (knownLatest) {
+    const aliasResolved = NSE_SYMBOL_ALIASES[knownLatest] || knownLatest;
+    return {
+      symbol: aliasResolved,
+      originalInput: knownLatest,
+      isExplicitInLatest: true,
+    };
   }
 
-  // 5. Isolated single token that looks like an unknown ticker (e.g. user typed just "CDSL" or "BSE")
+  // Check 4: Explicit command prefix like "analyze XYZ", "quote XYZ", "$XYZ"
+  const explicitTickerMatch = trimmed.match(/(?:\$|quote\s+|analyze\s+|check\s+|ticker\s+|symbol\s+)([A-Z0-9_\-&]{2,16})\b/i);
+  if (explicitTickerMatch) {
+    const candidate = explicitTickerMatch[1].toUpperCase();
+    if (CONGLOMERATE_GROUPS[candidate]) {
+      const group = CONGLOMERATE_GROUPS[candidate];
+      return { symbol: group.flagship, originalInput: candidate, isExplicitInLatest: true, conglomerate: group };
+    }
+    if (NSE_SYMBOL_ALIASES[candidate]) {
+      return { symbol: NSE_SYMBOL_ALIASES[candidate], originalInput: candidate, isExplicitInLatest: true, resolvedFromAlias: candidate };
+    }
+    if (isPotentialTicker(candidate)) {
+      return { symbol: candidate, originalInput: candidate, isExplicitInLatest: true };
+    }
+  }
+
+  // Check 5: Isolated single token that looks like a ticker or potential typo
   if (lastWords.length === 1 && isPotentialTicker(lastWords[0])) {
-    return { symbol: resolveAlias(lastWords[0]), isExplicitInLatest: true };
+    const singleWord = lastWords[0];
+    if (CONGLOMERATE_GROUPS[singleWord]) {
+      const group = CONGLOMERATE_GROUPS[singleWord];
+      return { symbol: group.flagship, originalInput: singleWord, isExplicitInLatest: true, conglomerate: group };
+    }
+    if (NSE_SYMBOL_ALIASES[singleWord]) {
+      return { symbol: NSE_SYMBOL_ALIASES[singleWord], originalInput: singleWord, isExplicitInLatest: true, resolvedFromAlias: singleWord };
+    }
+    // Fuzzy matching against known tickers
+    const closest = findClosestNseSymbols(singleWord, 1);
+    if (closest.length > 0 && closest[0].similarity >= 0.65) {
+      return {
+        symbol: closest[0].symbol,
+        originalInput: singleWord,
+        isExplicitInLatest: true,
+        fuzzyMatched: true,
+      };
+    }
+    return { symbol: singleWord, originalInput: singleWord, isExplicitInLatest: true };
   }
 
-  // 6. Follow-up referring to previous stock ONLY if latest message contains an explicit pronoun/metric
+  // Check 6: Follow-up referring to previous stock ONLY if latest message contains an explicit pronoun/metric
   const isPronounFollowUp = /\b(its?\s+(target|stop\s*loss|sl|support|resistance|dma|ema|rsi|cpr|trend)|the\s+stock|the\s+share)\b/i.test(lower);
   if (isPronounFollowUp) {
     for (let i = messages.length - 2; i >= 0; i--) {
       const msg = messages[i];
       if (msg.role === "user") {
-        const words = msg.content.toUpperCase().match(/\b[A-Z0-9_\-]{2,14}\b/g) || [];
+        const words = msg.content.toUpperCase().match(/\b[A-Z0-9_\-&]{2,16}\b/g) || [];
         const priorKnown = words.find((w) => KNOWN_NSE_STOCKS.has(w));
         if (priorKnown) {
-          return { symbol: resolveAlias(priorKnown), isExplicitInLatest: false };
+          const resolved = NSE_SYMBOL_ALIASES[priorKnown] || priorKnown;
+          return { symbol: resolved, originalInput: priorKnown, isExplicitInLatest: false };
         }
       }
     }
   }
 
-  return { symbol: null, isExplicitInLatest: false };
+  return { symbol: null, originalInput: trimmed, isExplicitInLatest: false };
 }
 
 /**
@@ -953,6 +1288,7 @@ I bring 15+ years of institutional prop trading experience across Indian cash eq
 Here is what we can do together:
 * **Actionable Trade Setups**: Direct evaluation of trade setups with high-probability Entry Zones, Target 1/2/3, and mathematical Stop Loss levels (targeting 1:2+ R:R).
 * **Single Stock Breakdowns**: Price action, 20/50/200 DMA trend posture, volume divergence, and Camarilla/Floor Pivot boundaries for any NSE stock (e.g. RELIANCE, TCS, INFY, TATAMOTORS, HDFCBANK).
+* **Conglomerate & Sector Portfolios**: Comprehensive tracking of major business houses (e.g. TATA, ADANI, BAJAJ, BIRLA, MAHINDRA, HDFC, ICICI) with automatic bellwether analysis.
 * **Market Sentiment & Breadth**: Real-time Advance/Decline participation across ~3,700 NSE issues and benchmark index regimes.
 * **Trading Strategy & Derivatives**: Practical advice on swing trading, intraday execution, option strategies, and strict position sizing.
 
@@ -1080,7 +1416,7 @@ On the institutional desk, price action tells the true story of buyers and selle
     return educationalText;
   }
 
-  // 3. Market Breadth / Sentiment Query
+  // 6. Market Breadth / Sentiment Query
   const isGeneralBreadth = (lower.includes("mood") || lower.includes("breadth") || lower.includes("sentiment")) &&
     !lower.includes("news") && !lower.includes("target") && !lower.includes("stop loss");
 
@@ -1132,8 +1468,7 @@ On the institutional desk, price action tells the true story of buyers and selle
     return summary;
   }
 
-  // 4. Stock Recommendations & Watchlist Query (e.g. "Suggest good stocks", "Suggest trades", "Which stocks to buy?", "Top stocks", "Best swing trades")
-  // 4. General Trade Suggestion Inquiry (Conversational Trading Mentor Dialogue)
+  // 7. General Trade Suggestion Inquiry (Conversational Trading Mentor Dialogue)
   const isStockSuggestion =
     /\b(suggest|recommend|pick|picks|ideas?|watchlist|scan|best stocks|good stocks|top stocks|stocks to buy|shares to buy|trades|trade ideas)\b/i.test(lower) &&
     !lastUserMessage.toUpperCase().match(/\b(RELIANCE|TCS|INFY|HDFCBANK|ICICIBANK|SBIN|TATAMOTORS|MARUTI|SUNPHARMA|TITAN|BAJFINANCE|ADANIENT|WIPRO|NTPC|POWERGRID|ONGC|TATASTEEL|COALINDIA)\b/);
@@ -1154,8 +1489,9 @@ What stock or sector do you want to dissect?`;
     return responseText;
   }
 
-  // 5. Stock Symbol Query (with multi-turn context retention)
-  const { symbol: activeSymbol } = extractActiveSymbol(messages);
+  // 8. Stock Symbol & Conglomerate Query (with multi-turn context retention)
+  const resolution = extractActiveSymbol(messages);
+  const activeSymbol = resolution.symbol;
 
   if (activeSymbol) {
     onEvent({ type: "tool_start", toolName: "cm_get_stock_quote", toolArgs: { symbol: activeSymbol } });
@@ -1202,7 +1538,29 @@ What stock or sector do you want to dissect?`;
       const t3Move = fmtMove((algoTargets.targets.t3Extended - currentPrice) / currentPrice * 100);
       const slMove = fmtMove((algoTargets.stopLoss.recommended - currentPrice) / currentPrice * 100);
 
-      let summary = `## ${activeSymbol} Trading Desk Assessment & Trade Plan\n\n`;
+      let summary = "";
+
+      // 1. If user queried a conglomerate group, render conglomerate portfolio overview banner
+      if (resolution.conglomerate) {
+        const group = resolution.conglomerate;
+        summary += `> [!NOTE]\n`;
+        summary += `> **${group.groupName} Conglomerate Resolution**\n`;
+        summary += `> You requested **${group.groupName}**. DalalDesk tracks the following listed entities on the NSE:\n`;
+        for (const peer of group.peers) {
+          const isFlagship = peer.symbol === activeSymbol ? " *(Group Bellwether analyzed below)*" : "";
+          summary += `> * **${peer.companyName}** (\`${peer.symbol}\`): ${peer.sector}${isFlagship}\n`;
+        }
+        summary += `>\n`;
+        summary += `> Below is the live tape breakdown and quantitative trade plan for the flagship **${activeSymbol}**. To dissect any other company in the group, send its ticker (e.g. ${group.peers.slice(1, 4).map((p) => `\`${p.symbol}\``).join(", ")}).\n\n`;
+      } else if (resolution.resolvedFromAlias && resolution.resolvedFromAlias !== activeSymbol) {
+        summary += `> [!NOTE]\n`;
+        summary += `> **Symbol Resolution**: Mapped **${resolution.originalInput}** to official NSE symbol **${activeSymbol}**.\n\n`;
+      } else if (resolution.fuzzyMatched) {
+        summary += `> [!NOTE]\n`;
+        summary += `> **Typo Resolution**: Mapped **${resolution.originalInput}** to official NSE symbol **${activeSymbol}**.\n\n`;
+      }
+
+      summary += `## ${activeSymbol} Trading Desk Assessment & Trade Plan\n\n`;
       summary += `Looking at the live tape on **${activeSymbol}**, the stock is currently trading at **INR ${Number(ltp).toLocaleString("en-IN")}** (${sign}${pct}%):\n\n`;
 
       summary += `### 1. Trader's Market Bias & Regime\n`;
@@ -1257,13 +1615,28 @@ What stock or sector do you want to dissect?`;
       onEvent({ type: "text", text: summary });
       return summary;
     } else {
-      const notFound = `## Equity Symbol Lookup: ${activeSymbol}\n\nSymbol ${activeSymbol} was not found on the NSE live feed. Please verify the official NSE trading symbol (e.g. RELIANCE, TCS, INFY, HDFCBANK).\n\nNSE market data is provided for informational and research purposes only. Not investment advice.`;
+      const candidates = findClosestNseSymbols(resolution.originalInput || activeSymbol, 5);
+      let notFound = `## Equity Symbol Lookup: ${resolution.originalInput || activeSymbol}\n\n`;
+      notFound += `Symbol **${resolution.originalInput || activeSymbol}** was not recognized on the NSE live feed.\n\n`;
+
+      if (candidates.length > 0) {
+        notFound += `### Did you mean one of these active NSE equities?\n`;
+        for (const c of candidates) {
+          notFound += `* **\`${c.symbol}\`** (Match confidence: ${Math.round(c.similarity * 100)}%)\n`;
+        }
+        notFound += `\n`;
+      }
+
+      notFound += `### Conglomerate Group Lookups Supported:\n`;
+      notFound += `You can enter any conglomerate name directly (e.g. \`TATA\`, \`ADANI\`, \`BAJAJ\`, \`BIRLA\`, \`MAHINDRA\`, \`HDFC\`, \`ICICI\`, \`GODREJ\`) to dissect its full listed group portfolio and bellwether trade plan.\n\n`;
+      notFound += `NSE market data is provided for informational and research purposes only. Not investment advice.`;
+
       onEvent({ type: "text", text: notFound });
       return notFound;
     }
   }
 
-  // 5. Default Conversational Trading Partner Response
+  // 9. Default Conversational Trading Partner Response
   const responseText = `## DalalDesk Trading Desk Consultation
 
 I am actively tracking National Stock Exchange (NSE) order flow, derivatives structure, and Bhavcopy datasets.

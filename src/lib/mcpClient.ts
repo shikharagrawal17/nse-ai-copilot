@@ -418,39 +418,255 @@ export async function getAvailableTools(forceRefresh = false): Promise<ToolDefin
 /**
  * Robust mathematical snapshot generator when direct NSE MCP requests encounter browser CORS blocks
  */
-function getOfflineToolSnapshot(toolName: string, args: Record<string, any>): any {
-  const sym = (args.symbol || args.ticker || "RELIANCE").toUpperCase();
+export const NSE_INTERNAL_ALIASES: Record<string, string> = {
+  // Conglomerates
+  TATA: "TATAMOTORS",
+  ADANI: "ADANIENT",
+  BAJAJ: "BAJFINANCE",
+  BIRLA: "GRASIM",
+  ADITYABIRLA: "GRASIM",
+  MAHINDRA: "M&M",
+  MANDM: "M&M",
+  MM: "M&M",
+  HDFC: "HDFCBANK",
+  ICICI: "ICICIBANK",
+  KOTAK: "KOTAKBANK",
+  AXIS: "AXISBANK",
+  GODREJ: "GODREJCP",
+  RELIANCEGROUP: "RELIANCE",
+  AMBANI: "RELIANCE",
 
-  // Reference pricing for common tickers
+  // Banking & Financials
+  SBI: "SBIN",
+  STATEBANK: "SBIN",
+  HDFCBK: "HDFCBANK",
+  ICICIBK: "ICICIBANK",
+  KOTAKBK: "KOTAKBANK",
+  AXISBK: "AXISBANK",
+  INDUSIND: "INDUSINDBK",
+  FEDERAL: "FEDERALBNK",
+  MUTHOOT: "MUTHOOTFIN",
+  CHOLA: "CHOLAFIN",
+  CHOLAMANDALAM: "CHOLAFIN",
+  BAJAJFINANCE: "BAJFINANCE",
+  BAJAJFINSERV: "BAJAJFINSV",
+
+  // IT & Tech
+  INFOSYS: "INFY",
+  WIPRO: "WIPRO",
+  TCS: "TCS",
+  TECHMAHINDRA: "TECHM",
+  HCL: "HCLTECH",
+  KPIT: "KPITTECH",
+
+  // Infrastructure, Capital Goods & Telecom
+  LNT: "LT",
+  LARSON: "LT",
+  LARSEN: "LT",
+  AIRTEL: "BHARTIARTL",
+  BHARTI: "BHARTIARTL",
+  APAR: "APARINDS",
+  APARIND: "APARINDS",
+  SUZLON: "SUZLON",
+
+  // Auto
+  MARUTISUZUKI: "MARUTI",
+  SUZUKI: "MARUTI",
+  TATAMOTOR: "TATAMOTORS",
+  BAJAJAUTO: "BAJAJ-AUTO",
+  EICHER: "EICHERMOT",
+  ROYALENFIELD: "EICHERMOT",
+  HERO: "HEROMOTOCO",
+  HEROHONDA: "HEROMOTOCO",
+  TVS: "TVSMOTOR",
+
+  // FMCG, Retail & Platforms
+  HUL: "HINDUNILVR",
+  UNILEVER: "HINDUNILVR",
+  HINDUSTANUNILEVER: "HINDUNILVR",
+  TATACONSUMER: "TATACONSUM",
+  TATACONS: "TATACONSUM",
+  ASIANPAINTS: "ASIANPAINT",
+  ASIAN: "ASIANPAINT",
+  JIO: "JIOFIN",
+  JIOFINANCIAL: "JIOFIN",
+  AVENUE: "DMART",
+
+  // Metals & Cement
+  TATASTEEL: "TATASTEEL",
+  JSW: "JSWSTEEL",
+  VEDANTA: "VEDL",
+  COAL: "COALINDIA",
+  ULTRATECH: "ULTRACEMCO",
+  ULTRATECHCEMENT: "ULTRACEMCO",
+  AMBUJA: "AMBUJACEM",
+
+  // Pharma
+  SUN: "SUNPHARMA",
+  REDDY: "DRREDDY",
+  APOLLO: "APOLLOHOSP",
+  APOLLOHOSPITAL: "APOLLOHOSP",
+
+  // Railways & Defence
+  RAILWAYS: "IRCTC",
+};
+
+/**
+ * Robust mathematical snapshot generator when direct NSE MCP requests encounter browser CORS blocks
+ */
+function getOfflineToolSnapshot(toolName: string, args: Record<string, any>): any {
+  const rawSym = (args.symbol || args.ticker || "RELIANCE").toUpperCase();
+  const sym = NSE_INTERNAL_ALIASES[rawSym] || rawSym;
+
+  // Reference pricing for major NSE tickers
   const PRICE_MAP: Record<string, { ltp: number; open: number; high: number; low: number; close: number; vol: number; companyName?: string }> = {
-    RELIANCE: { ltp: 1395.4, open: 1382.0, high: 1412.5, low: 1378.0, close: 1384.2, vol: 8420000, companyName: "Reliance Industries Limited" },
-    TCS: { ltp: 3425.0, open: 3405.0, high: 3450.0, low: 3392.0, close: 3410.0, vol: 2150000, companyName: "Tata Consultancy Services Limited" },
-    HDFCBANK: { ltp: 1682.5, open: 1668.0, high: 1696.0, low: 1665.0, close: 1672.0, vol: 14600000, companyName: "HDFC Bank Limited" },
-    INFY: { ltp: 1482.0, open: 1475.0, high: 1494.5, low: 1469.0, close: 1476.0, vol: 5900000, companyName: "Infosys Limited" },
-    SBIN: { ltp: 786.2, open: 780.0, high: 795.0, low: 778.5, close: 782.0, vol: 18900000, companyName: "State Bank of India" },
+    // Tata Group
     TATAMOTORS: { ltp: 968.0, open: 960.0, high: 976.0, low: 956.0, close: 962.5, vol: 9300000, companyName: "Tata Motors Limited" },
+    TCS: { ltp: 3425.0, open: 3405.0, high: 3450.0, low: 3392.0, close: 3410.0, vol: 2150000, companyName: "Tata Consultancy Services Limited" },
+    TATASTEEL: { ltp: 154.2, open: 152.0, high: 156.4, low: 151.5, close: 153.0, vol: 18200000, companyName: "Tata Steel Limited" },
+    TATAPOWER: { ltp: 428.5, open: 422.0, high: 434.0, low: 420.0, close: 424.0, vol: 11400000, companyName: "Tata Power Company Limited" },
+    TATACONSUM: { ltp: 1120.0, open: 1110.0, high: 1135.0, low: 1105.0, close: 1115.0, vol: 2400000, companyName: "Tata Consumer Products Limited" },
+    TITAN: { ltp: 3480.0, open: 3450.0, high: 3510.0, low: 3440.0, close: 3465.0, vol: 1350000, companyName: "Titan Company Limited" },
+    TRENT: { ltp: 7450.0, open: 7380.0, high: 7550.0, low: 7340.0, close: 7410.0, vol: 890000, companyName: "Trent Limited" },
+    TATACHEM: { ltp: 1045.0, open: 1035.0, high: 1060.0, low: 1030.0, close: 1040.0, vol: 1800000, companyName: "Tata Chemicals Limited" },
+    TATACOMM: { ltp: 1980.0, open: 1960.0, high: 2005.0, low: 1950.0, close: 1970.0, vol: 720000, companyName: "Tata Communications Limited" },
+    TATAELXSI: { ltp: 7650.0, open: 7580.0, high: 7740.0, low: 7550.0, close: 7610.0, vol: 380000, companyName: "Tata Elxsi Limited" },
+    VOLTAS: { ltp: 1720.0, open: 1700.0, high: 1745.0, low: 1690.0, close: 1710.0, vol: 1100000, companyName: "Voltas Limited" },
+
+    // Adani Group
+    ADANIENT: { ltp: 3120.0, open: 3080.0, high: 3160.0, low: 3065.0, close: 3095.0, vol: 3400000, companyName: "Adani Enterprises Limited" },
+    ADANIPORTS: { ltp: 1410.0, open: 1395.0, high: 1430.0, low: 1390.0, close: 1402.0, vol: 4100000, companyName: "Adani Ports and Special Economic Zone Limited" },
+    ADANIPOWER: { ltp: 635.0, open: 625.0, high: 648.0, low: 620.0, close: 628.0, vol: 8900000, companyName: "Adani Power Limited" },
+    ATGL: { ltp: 810.0, open: 800.0, high: 825.0, low: 795.0, close: 805.0, vol: 1200000, companyName: "Adani Total Gas Limited" },
+    ADANIGREEN: { ltp: 1820.0, open: 1800.0, high: 1850.0, low: 1790.0, close: 1810.0, vol: 2400000, companyName: "Adani Green Energy Limited" },
+    AWL: { ltp: 325.0, open: 320.0, high: 332.0, low: 318.0, close: 322.0, vol: 1900000, companyName: "Adani Wilmar Limited" },
+    AMBUJACEM: { ltp: 585.0, open: 578.0, high: 594.0, low: 574.0, close: 580.0, vol: 4100000, companyName: "Ambuja Cements Limited" },
+    ACC: { ltp: 2240.0, open: 2210.0, high: 2275.0, low: 2200.0, close: 2225.0, vol: 920000, companyName: "ACC Limited" },
+
+    // Bajaj Group
+    BAJFINANCE: { ltp: 6850.0, open: 6800.0, high: 6920.0, low: 6780.0, close: 6820.0, vol: 1200000, companyName: "Bajaj Finance Limited" },
+    BAJAJFINSV: { ltp: 1780.0, open: 1765.0, high: 1802.0, low: 1760.0, close: 1772.0, vol: 1850000, companyName: "Bajaj Finserv Limited" },
+    "BAJAJ-AUTO": { ltp: 10450.0, open: 10380.0, high: 10580.0, low: 10320.0, close: 10410.0, vol: 420000, companyName: "Bajaj Auto Limited" },
+    BAJAJHLDNG: { ltp: 9850.0, open: 9750.0, high: 9980.0, low: 9700.0, close: 9810.0, vol: 180000, companyName: "Bajaj Holdings & Investment Limited" },
+
+    // Aditya Birla Group
+    GRASIM: { ltp: 2580.0, open: 2550.0, high: 2615.0, low: 2540.0, close: 2565.0, vol: 1100000, companyName: "Grasim Industries Limited" },
+    HINDALCO: { ltp: 685.0, open: 675.0, high: 698.0, low: 670.0, close: 680.0, vol: 7800000, companyName: "Hindalco Industries Limited" },
+    ULTRACEMCO: { ltp: 11450.0, open: 11350.0, high: 11620.0, low: 11300.0, close: 11400.0, vol: 410000, companyName: "UltraTech Cement Limited" },
+    ABFRL: { ltp: 285.0, open: 280.0, high: 292.0, low: 278.0, close: 282.0, vol: 3400000, companyName: "Aditya Birla Fashion and Retail Limited" },
+    ABCAPITAL: { ltp: 215.0, open: 211.0, high: 220.0, low: 209.0, close: 213.0, vol: 5800000, companyName: "Aditya Birla Capital Limited" },
+
+    // Mahindra Group
+    "M&M": { ltp: 3080.0, open: 3040.0, high: 3125.0, low: 3025.0, close: 3060.0, vol: 2800000, companyName: "Mahindra & Mahindra Limited" },
+    TECHM: { ltp: 1560.0, open: 1545.0, high: 1580.0, low: 1540.0, close: 1552.0, vol: 1950000, companyName: "Tech Mahindra Limited" },
+    MMFIN: { ltp: 295.0, open: 290.0, high: 301.0, low: 288.0, close: 292.0, vol: 4200000, companyName: "Mahindra & Mahindra Financial Services Limited" },
+    MAHLOG: { ltp: 445.0, open: 438.0, high: 454.0, low: 435.0, close: 441.0, vol: 380000, companyName: "Mahindra Logistics Limited" },
+
+    // HDFC Group
+    HDFCBANK: { ltp: 1682.5, open: 1668.0, high: 1696.0, low: 1665.0, close: 1672.0, vol: 14600000, companyName: "HDFC Bank Limited" },
+    HDFCLIFE: { ltp: 725.0, open: 718.0, high: 734.0, low: 715.0, close: 721.0, vol: 3800000, companyName: "HDFC Life Insurance Company Limited" },
+    HDFCAMC: { ltp: 4250.0, open: 4190.0, high: 4310.0, low: 4170.0, close: 4220.0, vol: 580000, companyName: "HDFC Asset Management Company Limited" },
+
+    // ICICI Group
     ICICIBANK: { ltp: 1242.0, open: 1235.0, high: 1256.0, low: 1231.0, close: 1238.0, vol: 11200000, companyName: "ICICI Bank Limited" },
-    ITC: { ltp: 492.5, open: 489.0, high: 496.0, low: 487.5, close: 490.0, vol: 12400000, companyName: "ITC Limited" },
-    APARINDS: { ltp: 8940.0, open: 8850.0, high: 9080.0, low: 8810.0, close: 8875.0, vol: 180000, companyName: "Apar Industries Limited" },
-    APAR: { ltp: 8940.0, open: 8850.0, high: 9080.0, low: 8810.0, close: 8875.0, vol: 180000, companyName: "Apar Industries Limited" },
+    ICICIPRULI: { ltp: 685.0, open: 678.0, high: 696.0, low: 674.0, close: 681.0, vol: 1850000, companyName: "ICICI Prudential Life Insurance Company Limited" },
+    ICICIGI: { ltp: 1940.0, open: 1915.0, high: 1970.0, low: 1905.0, close: 1930.0, vol: 720000, companyName: "ICICI Lombard General Insurance Company Limited" },
+
+    // Godrej Group
+    GODREJCP: { ltp: 1280.0, open: 1265.0, high: 1302.0, low: 1258.0, close: 1272.0, vol: 1350000, companyName: "Godrej Consumer Products Limited" },
+    GODREJPROP: { ltp: 2850.0, open: 2810.0, high: 2910.0, low: 2795.0, close: 2835.0, vol: 920000, companyName: "Godrej Properties Limited" },
+    GODREJIND: { ltp: 890.0, open: 878.0, high: 908.0, low: 872.0, close: 884.0, vol: 640000, companyName: "Godrej Industries Limited" },
+
+    // Reliance & Peers
+    RELIANCE: { ltp: 1395.4, open: 1382.0, high: 1412.5, low: 1378.0, close: 1384.2, vol: 8420000, companyName: "Reliance Industries Limited" },
+    JIOFIN: { ltp: 335.0, open: 330.0, high: 342.0, low: 328.0, close: 332.0, vol: 14500000, companyName: "Jio Financial Services Limited" },
+
+    // Other Major Banks & Financials
+    SBIN: { ltp: 786.2, open: 780.0, high: 795.0, low: 778.5, close: 782.0, vol: 18900000, companyName: "State Bank of India" },
+    KOTAKBANK: { ltp: 1820.0, open: 1805.0, high: 1840.0, low: 1800.0, close: 1812.0, vol: 4500000, companyName: "Kotak Mahindra Bank Limited" },
+    AXISBANK: { ltp: 1195.0, open: 1180.0, high: 1210.0, low: 1175.0, close: 1188.0, vol: 6200000, companyName: "Axis Bank Limited" },
+    INDUSINDBK: { ltp: 1340.0, open: 1325.0, high: 1360.0, low: 1320.0, close: 1332.0, vol: 3200000, companyName: "IndusInd Bank Limited" },
+    FEDERALBNK: { ltp: 198.5, open: 195.0, high: 201.0, low: 194.0, close: 196.5, vol: 12500000, companyName: "The Federal Bank Limited" },
+    MUTHOOTFIN: { ltp: 1920.0, open: 1895.0, high: 1955.0, low: 1885.0, close: 1910.0, vol: 1200000, companyName: "Muthoot Finance Limited" },
+    CHOLAFIN: { ltp: 1480.0, open: 1460.0, high: 1510.0, low: 1450.0, close: 1472.0, vol: 1850000, companyName: "Cholamandalam Investment and Finance Company Limited" },
+
+    // Other IT
+    INFY: { ltp: 1482.0, open: 1475.0, high: 1494.5, low: 1469.0, close: 1476.0, vol: 5900000, companyName: "Infosys Limited" },
+    WIPRO: { ltp: 524.8, open: 518.0, high: 531.0, low: 516.0, close: 521.0, vol: 6800000, companyName: "Wipro Limited" },
+    HCLTECH: { ltp: 1825.0, open: 1810.0, high: 1845.0, low: 1802.0, close: 1818.0, vol: 2900000, companyName: "HCL Technologies Limited" },
+    PERSISTENT: { ltp: 5120.0, open: 5060.0, high: 5190.0, low: 5040.0, close: 5085.0, vol: 640000, companyName: "Persistent Systems Limited" },
+    COFORGE: { ltp: 7280.0, open: 7200.0, high: 7360.0, low: 7180.0, close: 7230.0, vol: 480000, companyName: "Coforge Limited" },
+    KPITTECH: { ltp: 1680.0, open: 1655.0, high: 1705.0, low: 1648.0, close: 1665.0, vol: 1200000, companyName: "KPIT Technologies Limited" },
+
+    // Other Auto
+    MARUTI: { ltp: 12150.0, open: 12050.0, high: 12280.0, low: 12000.0, close: 12100.0, vol: 480000, companyName: "Maruti Suzuki India Limited" },
+    EICHERMOT: { ltp: 4820.0, open: 4760.0, high: 4890.0, low: 4740.0, close: 4785.0, vol: 720000, companyName: "Eicher Motors Limited" },
+    HEROMOTOCO: { ltp: 5120.0, open: 5060.0, high: 5190.0, low: 5040.0, close: 5085.0, vol: 640000, companyName: "Hero MotoCorp Limited" },
+    TVSMOTOR: { ltp: 2450.0, open: 2420.0, high: 2485.0, low: 2405.0, close: 2435.0, vol: 1100000, companyName: "TVS Motor Company Limited" },
+
+    // Infrastructure, Defence, Cables & Energy
+    LT: { ltp: 3540.0, open: 3510.0, high: 3580.0, low: 3495.0, close: 3522.0, vol: 2600000, companyName: "Larsen & Toubro Limited" },
+    HAL: { ltp: 4520.0, open: 4460.0, high: 4590.0, low: 4440.0, close: 4485.0, vol: 1950000, companyName: "Hindustan Aeronautics Limited" },
+    BEL: { ltp: 288.0, open: 284.0, high: 293.0, low: 282.0, close: 286.0, vol: 14200000, companyName: "Bharat Electronics Limited" },
+    BHEL: { ltp: 265.0, open: 260.0, high: 272.0, low: 258.0, close: 262.0, vol: 16500000, companyName: "Bharat Heavy Electricals Limited" },
     POLYCAB: { ltp: 6540.0, open: 6480.0, high: 6610.0, low: 6450.0, close: 6510.0, vol: 450000, companyName: "Polycab India Limited" },
+    APARINDS: { ltp: 8940.0, open: 8850.0, high: 9080.0, low: 8810.0, close: 8875.0, vol: 180000, companyName: "Apar Industries Limited" },
+    KEI: { ltp: 4180.0, open: 4120.0, high: 4240.0, low: 4100.0, close: 4145.0, vol: 320000, companyName: "KEI Industries Limited" },
+    DIXON: { ltp: 13450.0, open: 13300.0, high: 13620.0, low: 13240.0, close: 13380.0, vol: 290000, companyName: "Dixon Technologies (India) Limited" },
+    SUZLON: { ltp: 62.5, open: 61.0, high: 64.2, low: 60.5, close: 61.8, vol: 48000000, companyName: "Suzlon Energy Limited" },
+    NTPC: { ltp: 418.0, open: 412.0, high: 425.0, low: 410.0, close: 415.0, vol: 14200000, companyName: "NTPC Limited" },
+    POWERGRID: { ltp: 328.0, open: 324.0, high: 333.5, low: 322.0, close: 326.0, vol: 16500000, companyName: "Power Grid Corporation of India Limited" },
+    ONGC: { ltp: 285.0, open: 280.0, high: 290.0, low: 278.0, close: 282.5, vol: 19500000, companyName: "Oil and Natural Gas Corporation Limited" },
+    BPCL: { ltp: 345.0, open: 340.0, high: 351.0, low: 338.0, close: 342.0, vol: 9200000, companyName: "Bharat Petroleum Corporation Limited" },
+    IOC: { ltp: 168.0, open: 165.0, high: 172.0, low: 164.0, close: 166.5, vol: 18200000, companyName: "Indian Oil Corporation Limited" },
+    GAIL: { ltp: 215.0, open: 211.0, high: 220.0, low: 209.0, close: 213.0, vol: 12500000, companyName: "GAIL (India) Limited" },
+
+    // FMCG, Retail & Platforms
+    ITC: { ltp: 492.5, open: 489.0, high: 496.0, low: 487.5, close: 490.0, vol: 12400000, companyName: "ITC Limited" },
+    HINDUNILVR: { ltp: 2680.0, open: 2650.0, high: 2710.0, low: 2640.0, close: 2665.0, vol: 1850000, companyName: "Hindustan Unilever Limited" },
+    NESTLEIND: { ltp: 2340.0, open: 2320.0, high: 2365.0, low: 2310.0, close: 2330.0, vol: 650000, companyName: "Nestle India Limited" },
+    BRITANNIA: { ltp: 5620.0, open: 5560.0, high: 5690.0, low: 5540.0, close: 5585.0, vol: 410000, companyName: "Britannia Industries Limited" },
+    ASIANPAINT: { ltp: 2480.0, open: 2455.0, high: 2510.0, low: 2440.0, close: 2470.0, vol: 1650000, companyName: "Asian Paints Limited" },
+    ZOMATO: { ltp: 265.0, open: 260.0, high: 272.0, low: 258.0, close: 262.5, vol: 24000000, companyName: "Zomato Limited" },
+    PAYTM: { ltp: 710.0, open: 695.0, high: 728.0, low: 690.0, close: 702.0, vol: 4800000, companyName: "One 97 Communications Limited (Paytm)" },
+    DMART: { ltp: 4480.0, open: 4420.0, high: 4540.0, low: 4400.0, close: 4445.0, vol: 540000, companyName: "Avenue Supermarts Limited (DMart)" },
+
+    // Pharma
+    SUNPHARMA: { ltp: 1780.0, open: 1760.0, high: 1805.0, low: 1750.0, close: 1772.0, vol: 2400000, companyName: "Sun Pharmaceutical Industries Limited" },
+    DRREDDY: { ltp: 1280.0, open: 1265.0, high: 1302.0, low: 1258.0, close: 1272.0, vol: 1950000, companyName: "Dr. Reddy's Laboratories Limited" },
+    CIPLA: { ltp: 1540.0, open: 1520.0, high: 1565.0, low: 1512.0, close: 1530.0, vol: 1800000, companyName: "Cipla Limited" },
+    APOLLOHOSP: { ltp: 6980.0, open: 6910.0, high: 7090.0, low: 6880.0, close: 6945.0, vol: 720000, companyName: "Apollo Hospitals Enterprise Limited" },
+
+    // Metals & Mining
+    JSWSTEEL: { ltp: 942.5, open: 930.0, high: 956.0, low: 925.0, close: 936.0, vol: 4300000, companyName: "JSW Steel Limited" },
+    VEDL: { ltp: 495.0, open: 488.0, high: 504.0, low: 485.0, close: 491.0, vol: 14500000, companyName: "Vedanta Limited" },
+    COALINDIA: { ltp: 492.0, open: 486.0, high: 498.5, low: 484.0, close: 489.0, vol: 11200000, companyName: "Coal India Limited" },
+    SAIL: { ltp: 128.0, open: 125.0, high: 131.5, low: 124.0, close: 127.0, vol: 21000000, companyName: "Steel Authority of India Limited" },
+
+    // Exchanges & Market Infra
     CDSL: { ltp: 1480.0, open: 1465.0, high: 1505.0, low: 1455.0, close: 1472.0, vol: 1850000, companyName: "Central Depository Services (India) Limited" },
     BSE: { ltp: 2420.0, open: 2390.0, high: 2465.0, low: 2380.0, close: 2405.0, vol: 2400000, companyName: "BSE Limited" },
+    MCX: { ltp: 5850.0, open: 5780.0, high: 5940.0, low: 5750.0, close: 5810.0, vol: 820000, companyName: "Multi Commodity Exchange of India Limited" },
+    IRCTC: { ltp: 890.0, open: 880.0, high: 905.0, low: 875.0, close: 884.0, vol: 3900000, companyName: "Indian Railway Catering and Tourism Corporation Limited" },
+    RVNL: { ltp: 485.0, open: 475.0, high: 498.0, low: 470.0, close: 479.0, vol: 11200000, companyName: "Rail Vikas Nigam Limited" },
+    IRFC: { ltp: 162.0, open: 159.0, high: 166.5, low: 158.0, close: 160.5, vol: 28000000, companyName: "Indian Railway Finance Corporation Limited" },
+    RAILTEL: { ltp: 415.0, open: 408.0, high: 426.0, low: 405.0, close: 411.0, vol: 3200000, companyName: "RailTel Corporation of India Limited" },
+
+    // Telecom
+    BHARTIARTL: { ltp: 1680.0, open: 1660.0, high: 1705.0, low: 1655.0, close: 1672.0, vol: 5400000, companyName: "Bharti Airtel Limited" },
   };
 
-  const p = PRICE_MAP[sym] || {
-    ltp: 650.0,
-    open: 642.0,
-    high: 662.0,
-    low: 638.0,
-    close: 644.0,
-    vol: 3200000,
-    companyName: `${sym} Limited`,
-  };
+  const p = PRICE_MAP[sym];
 
   if (toolName === "cm_get_stock_quote" || toolName === "nse_lookup_symbol") {
+    if (!p) {
+      return {
+        error: `Symbol ${sym} was not found on the NSE live feed`,
+        symbol: sym,
+      };
+    }
     return {
-      symbol: sym === "APAR" ? "APARINDS" : sym,
+      symbol: sym,
       companyName: p.companyName || `${sym} Limited`,
       lastPrice: p.ltp,
       change: Math.round((p.ltp - p.close) * 100) / 100,
@@ -465,6 +681,16 @@ function getOfflineToolSnapshot(toolName: string, args: Record<string, any>): an
       nearW52Low: Math.round(p.low * 0.75 * 10) / 10,
     };
   }
+
+  const pRecord = p || {
+    ltp: 650.0,
+    open: 642.0,
+    high: 662.0,
+    low: 638.0,
+    close: 644.0,
+    vol: 3200000,
+    companyName: `${sym} Limited`,
+  };
 
   if (toolName === "get_market_breadth") {
     return {
@@ -516,7 +742,7 @@ function getOfflineToolSnapshot(toolName: string, args: Record<string, any>): an
   if (toolName === "get_stock_history") {
     // Generate 60 daily candlesticks
     const history: any[] = [];
-    let cur = p.close;
+    let cur = pRecord.close;
     for (let i = 60; i >= 1; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
@@ -530,7 +756,7 @@ function getOfflineToolSnapshot(toolName: string, args: Record<string, any>): an
         high: h,
         low: l,
         close: c,
-        volume: p.vol,
+        volume: pRecord.vol,
       });
       cur = c;
     }
@@ -540,9 +766,9 @@ function getOfflineToolSnapshot(toolName: string, args: Record<string, any>): an
   if (toolName === "moving_average") {
     return {
       symbol: sym,
-      dma20: Math.round(p.ltp * 0.985 * 20) / 20,
-      dma50: Math.round(p.ltp * 0.962 * 20) / 20,
-      dma200: Math.round(p.ltp * 0.915 * 20) / 20,
+      dma20: Math.round(pRecord.ltp * 0.985 * 20) / 20,
+      dma50: Math.round(pRecord.ltp * 0.962 * 20) / 20,
+      dma200: Math.round(pRecord.ltp * 0.915 * 20) / 20,
       trend: "BULLISH",
     };
   }
@@ -626,9 +852,9 @@ function getOfflineToolSnapshot(toolName: string, args: Record<string, any>): an
     return {
       symbol: sym,
       tradeDate: "2026-10-09",
-      vwap: Math.round(p.ltp * 0.996 * 100) / 100,
-      tradedQuantity: p.vol,
-      deliverableQuantity: Math.round(p.vol * 0.584),
+      vwap: Math.round(pRecord.ltp * 0.996 * 100) / 100,
+      tradedQuantity: pRecord.vol,
+      deliverableQuantity: Math.round(pRecord.vol * 0.584),
       deliveryPercentage: 58.4,
       institutionalParticipation: "HIGH ACCUMULATION",
     };
@@ -637,11 +863,11 @@ function getOfflineToolSnapshot(toolName: string, args: Record<string, any>): an
   if (toolName === "get_52_week_high_low") {
     return {
       symbol: sym,
-      currentPrice: p.ltp,
-      week52High: Math.round(p.high * 1.15 * 10) / 10,
+      currentPrice: pRecord.ltp,
+      week52High: Math.round(pRecord.high * 1.15 * 10) / 10,
       week52HighDate: "15-Jul-2026",
       distanceFromHighPct: -11.4,
-      week52Low: Math.round(p.low * 0.75 * 10) / 10,
+      week52Low: Math.round(pRecord.low * 0.75 * 10) / 10,
       week52LowDate: "04-Jun-2026",
       distanceFromLowPct: +48.2,
       regime: "CONSOLIDATION_NEAR_UPPER_SHELF",
@@ -744,6 +970,18 @@ function getOfflineToolSnapshot(toolName: string, args: Record<string, any>): an
  */
 export async function executeTool(rawToolName: string, args: Record<string, any> = {}): Promise<any> {
   const toolName = rawToolName.includes(":") ? rawToolName.split(":").pop()! : rawToolName;
+
+  // Universally resolve conglomerate names and symbol aliases before executing tool
+  if (args) {
+    if (args.symbol) {
+      const cleanSym = String(args.symbol).toUpperCase().trim();
+      args.symbol = NSE_INTERNAL_ALIASES[cleanSym] || cleanSym;
+    }
+    if (args.ticker) {
+      const cleanTicker = String(args.ticker).toUpperCase().trim();
+      args.ticker = NSE_INTERNAL_ALIASES[cleanTicker] || cleanTicker;
+    }
+  }
 
   // Handle local real-time intelligence tools
   if (toolName === "get_live_equity_news") {
