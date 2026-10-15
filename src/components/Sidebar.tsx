@@ -44,15 +44,15 @@ export function Sidebar({
   }, []);
 
   const breadth = pulseData?.mood?.breadth || {
-    advances: 2145,
-    declines: 1436,
-    unchanged: 106,
-    ad_ratio: 1.49,
-    total_stocks: 3687,
+    advances: 0,
+    declines: 0,
+    unchanged: 0,
+    ad_ratio: 0,
+    total_stocks: 0,
   };
 
   const total = (breadth.advances || 0) + (breadth.declines || 0) || 1;
-  const advancePercent = Math.round(((breadth.advances || 0) / total) * 100);
+  const advancePercent = breadth.advances ? Math.round(((breadth.advances || 0) / total) * 100) : 50;
 
   const curatedPrompts = [
     {
